@@ -1,0 +1,9 @@
+- name: Docs
+  href: documentation/
+
+- name: Api
+  href: api/
+  homepage: api/HandyFSM.yml
+
+- name: Github
+  href: https://github.com/no-slopes/handy-fsm

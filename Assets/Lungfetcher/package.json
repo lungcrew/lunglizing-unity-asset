@@ -1,0 +1,26 @@
+{
+  "name": "com.lungcrew.lungfetcher",
+  "version": "0.0.0",
+  "displayName": "Lungfetcher",
+  "description": "A solution for fetching lung projects in Unity",
+  "unity": "2022.3",
+  "unityRelease": "0f1",
+  "documentationUrl": "https://lungcrew.github.io/unity-lungfetcher",
+  "changelogUrl": "https://lungcrew.github.io/unity-lungfetcher/documentation/CHANGELOG.html",
+  "licensesUrl": "https://github.com/lungcrew/unity-lungfetcher/blob/main/LICENSE.md",
+  "author": {
+    "name": "Lungcrew",
+    "email": "lungcrew@gmail.com",
+    "url": "http://github.com/lungcrew"
+  },
+  "keywords": [
+    "localization",
+    "translation",
+    "locales"
+  ],
+  "samples": [],
+  "scripts": {
+    "serve-docs": "docfx ../../docfx_project/docfx.json --serve",
+    "build-docs": "docfx ../../docfx_project/docfx.json"
+  }
+}
