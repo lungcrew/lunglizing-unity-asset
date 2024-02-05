@@ -93,6 +93,8 @@ fmod_editor.log
 /node_modules.meta
 .release-it.json
 
+# Plugins
+[Aa]ssets/Plugins
 
 
 
