@@ -1,3 +1,10 @@
+## [1.2.9](https://github.com/lungcrew/unity-lungfetcher/compare/v1.2.8...v1.2.9) (2024-02-06)
+
+
+### Bug Fixes
+
+* finally ([dbb1c81](https://github.com/lungcrew/unity-lungfetcher/commit/dbb1c81ae7cdc4781353c0b0139e53fdfd4b8788))
+
 ## [1.2.8](https://github.com/lungcrew/unity-lungfetcher/compare/v1.2.7...v1.2.8) (2024-02-06)
 
 
