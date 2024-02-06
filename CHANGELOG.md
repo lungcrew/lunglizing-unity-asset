@@ -1,3 +1,10 @@
+## [1.1.1](https://github.com/lungcrew/unity-lungfetcher/compare/v1.1.0...v1.1.1) (2024-02-06)
+
+
+### Bug Fixes
+
+* Commiting development anchor removal ([f42cd9e](https://github.com/lungcrew/unity-lungfetcher/commit/f42cd9e9b360bf56b1df3199a57375325de31a6d))
+
 # [1.1.0](https://github.com/lungcrew/unity-lungfetcher/compare/v1.0.1...v1.1.0) (2024-02-06)
 
 
