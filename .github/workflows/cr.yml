@@ -39,10 +39,11 @@ jobs:
             git commit -am "fix: Samples => Samples~"
           fi
 
-          git rm Runtime/Resources/DevelopmentAnchor.asset
-          git rm Runtime/Resources/DevelopmentAnchor.asset.meta
+          mv Runtime/Resources/DevelopmentAnchor.asset Runtime/DevelopmentAnchor.asset
+          mv Runtime/Resources/DevelopmentAnchor.asset.meta Runtime/DevelopmentAnchor.asset.meta
 
-          mkdir -p Runtime/Resources
+          rm Runtime/DevelopmentAnchor.asset
+          rm Runtime/DevelopmentAnchor.asset.meta
 
           git commit -am "Removed DevelopmentAnchor"
           git push -f -u origin upm
