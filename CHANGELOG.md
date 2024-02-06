@@ -1,3 +1,10 @@
+# [1.1.0](https://github.com/lungcrew/unity-lungfetcher/compare/v1.0.1...v1.1.0) (2024-02-06)
+
+
+### Features
+
+* **DevelopmentAnchor:** Created ([8ba9f61](https://github.com/lungcrew/unity-lungfetcher/commit/8ba9f612b3ff73abac9dbddbd840eec7ddb617df))
+
 ## [1.0.1](https://github.com/lungcrew/unity-lungfetcher/compare/v1.0.0...v1.0.1) (2024-02-05)
 
 
