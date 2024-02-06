@@ -1,3 +1,10 @@
+## [1.2.4](https://github.com/lungcrew/unity-lungfetcher/compare/v1.2.3...v1.2.4) (2024-02-06)
+
+
+### Bug Fixes
+
+* Removing Resources.meta ([4f92ff4](https://github.com/lungcrew/unity-lungfetcher/commit/4f92ff41e8e338abced224f05087a1ac1e700b7e))
+
 ## [1.2.3](https://github.com/lungcrew/unity-lungfetcher/compare/v1.2.2...v1.2.3) (2024-02-06)
 
 
