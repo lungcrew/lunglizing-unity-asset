@@ -9,8 +9,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e99376666ed52164dac434684a24f02c, type: 3}
-  m_Name: Attacking State
+  m_Script: {fileID: 11500000, guid: 9470f2e9200466e49b8259b03c40dd31, type: 3}
+  m_Name: DevelopmentAnchor
   m_EditorClassIdentifier: 
-  _interruptible: 1
-  _name: Attacking
+  _testOn: 0
