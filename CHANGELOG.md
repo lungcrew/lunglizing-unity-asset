@@ -1,3 +1,10 @@
+# [1.2.0](https://github.com/lungcrew/unity-lungfetcher/compare/v1.1.2...v1.2.0) (2024-02-06)
+
+
+### Features
+
+* **LungRequest:** Lung Requests and responses are working ([4398296](https://github.com/lungcrew/unity-lungfetcher/commit/4398296099a25d636e1c1fe348cdc5b2b066ed9b))
+
 ## [1.1.2](https://github.com/lungcrew/unity-lungfetcher/compare/v1.1.1...v1.1.2) (2024-02-06)
 
 
