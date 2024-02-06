@@ -1,6 +1,6 @@
 using System.Threading.Tasks;
 
-namespace Lungfecther.Web
+namespace Lungfetcher.Web
 {
     public delegate void Started(WebRequest request);
     public delegate void Stopped(WebResponse response);

@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace Lungfecther.Web
+namespace Lungfetcher.Web
 {
     public class WebResponse
     {
@@ -16,6 +16,8 @@ namespace Lungfecther.Web
         #endregion
 
         #region Getters
+
+        public WebRequest OriginalRequest => _originalRequest;
 
         /// <summary>
         /// If the request was successful.

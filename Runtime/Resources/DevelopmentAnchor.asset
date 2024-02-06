@@ -12,4 +12,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9470f2e9200466e49b8259b03c40dd31, type: 3}
   m_Name: DevelopmentAnchor
   m_EditorClassIdentifier: 
-  _testOn: 0
+  _developmentOn: 1
