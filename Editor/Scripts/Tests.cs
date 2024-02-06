@@ -61,7 +61,7 @@ public class MyEditorWindow : EditorWindow
 
     public async Task FetchTable(int id)
     {
-        // Exibir ui de carregamento
+        // Exibir ui de carregando dados
 
         var request = WebRequest.To("http://localhost/api/v0/external/tables/87/entries");
 
@@ -78,8 +78,11 @@ public class MyEditorWindow : EditorWindow
             Debug.Log(response.HttpErrorMessage);
         }
 
+        // remover ui de carregamento e Exibir barra de progresso
+
         // Traduzir as entradas em unity localization string table
 
-        // Remover ui de carregamento
+
+        // Remover barra de progresso
     }
 }
