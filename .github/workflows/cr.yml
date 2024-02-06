@@ -37,11 +37,11 @@ jobs:
             git commit -am "fix: Samples => Samples~"
           fi
 
-          rm Runtime/Resources/DevelopmentAnchor.asset
-          rm Runtime/Resources/DevelopmentAnchor.asset.meta
+          rm -f Runtime/Resources/DevelopmentAnchor.asset
+          rm -f Runtime/Resources/DevelopmentAnchor.asset.meta
 
-          if [ ! -d "Runtime/Resources" ]; then            
-            rm Runtime/Resources.meta
+          if [[ ! -d "Runtime/Resources" ]]; then            
+            rm -f Runtime/Resources.meta
           fi
 
           git commit -am "Removed DevelopmentAnchor"
