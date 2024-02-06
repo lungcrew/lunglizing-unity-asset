@@ -36,8 +36,8 @@ jobs:
             find Samples~ -name "*.meta" -type f -delete
             git commit -am "fix: Samples => Samples~"
           fi
-          rm -f Runtime/Resources/DevelopmentAnchor.asset
-          rm -f Runtime/Resources/DevelopmentAnchor.asset.meta
+          rm Runtime/Resources/DevelopmentAnchor.asset
+          rm Runtime/Resources/DevelopmentAnchor.asset.meta
           git commit -am "Removed DevelopmentAnchor"
           git push -f -u origin upm
         env:
