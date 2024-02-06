@@ -1,3 +1,10 @@
+## [1.2.1](https://github.com/lungcrew/unity-lungfetcher/compare/v1.2.0...v1.2.1) (2024-02-06)
+
+
+### Bug Fixes
+
+* Keeping resources folder ([791fbc2](https://github.com/lungcrew/unity-lungfetcher/commit/791fbc298f69aeb31ae6a20d1e2c73e29d3c75ce))
+
 # [1.2.0](https://github.com/lungcrew/unity-lungfetcher/compare/v1.1.2...v1.2.0) (2024-02-06)
 
 
