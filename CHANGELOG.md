@@ -1,3 +1,10 @@
+## [1.2.3](https://github.com/lungcrew/unity-lungfetcher/compare/v1.2.2...v1.2.3) (2024-02-06)
+
+
+### Bug Fixes
+
+* Removing Runtime/Resources if empty ([84bc9e5](https://github.com/lungcrew/unity-lungfetcher/commit/84bc9e5ff0cca5470c9c2235c823fca7ba98de4a))
+
 ## [1.2.2](https://github.com/lungcrew/unity-lungfetcher/compare/v1.2.1...v1.2.2) (2024-02-06)
 
 
