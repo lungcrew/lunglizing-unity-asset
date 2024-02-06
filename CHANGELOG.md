@@ -1,3 +1,10 @@
+## [1.0.1](https://github.com/lungcrew/unity-lungfetcher/compare/v1.0.0...v1.0.1) (2024-02-05)
+
+
+### Bug Fixes
+
+* Remove test stuff and empty folders ([e57b16d](https://github.com/lungcrew/unity-lungfetcher/commit/e57b16d237c3097dd6816589828d20828657c463))
+
 # 1.0.0 (2024-02-05)
 
 
