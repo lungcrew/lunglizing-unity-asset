@@ -1,3 +1,10 @@
+## [1.2.7](https://github.com/lungcrew/unity-lungfetcher/compare/v1.2.6...v1.2.7) (2024-02-06)
+
+
+### Bug Fixes
+
+* Mkdir ([0d53961](https://github.com/lungcrew/unity-lungfetcher/commit/0d53961d251a55b1fb03e987183dc26089f1d982))
+
 ## [1.2.6](https://github.com/lungcrew/unity-lungfetcher/compare/v1.2.5...v1.2.6) (2024-02-06)
 
 
