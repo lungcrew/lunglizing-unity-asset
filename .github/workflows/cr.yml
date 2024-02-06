@@ -42,6 +42,8 @@ jobs:
           git rm Runtime/Resources/DevelopmentAnchor.asset
           git rm Runtime/Resources/DevelopmentAnchor.asset.meta
 
+          mkdir -p Runtime/Resources
+
           git commit -am "Removed DevelopmentAnchor"
           git push -f -u origin upm
         env:
