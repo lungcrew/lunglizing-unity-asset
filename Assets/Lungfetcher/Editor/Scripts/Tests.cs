@@ -1,14 +1,14 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Lungfecther.Web;
+using Lungfetcher.Data;
 using Lungfetcher.Editor;
+using Lungfetcher.Web;
 using UnityEditor;
 using UnityEngine;
-using UnityEngine.UIElements;
 
 public class MyEditorWindow : EditorWindow
 {
-    [MenuItem("Tools/Go!")]
+    [MenuItem("Debug/Go!")]
     public static void ShowExample()
     {
         LungSettings.instance.Test = Random.Range(0, 100);
@@ -16,45 +16,56 @@ public class MyEditorWindow : EditorWindow
         Debug.Log(LungSettings.instance.Test);
     }
 
-    [MenuItem("Tools/Log!")]
+    [MenuItem("Debug/Log!")]
     public static void Log()
     {
         Debug.Log(LungSettings.instance.Test);
     }
 
-    [MenuItem("Tools/Test Anchor!")]
-    public static void Anchor()
+    [MenuItem("Debug/Request Tables!")]
+    public static async void Request()
     {
-        DevelopmentAnchor anchor = Resources.Load<DevelopmentAnchor>("DevelopmentAnchor");
+        LungRequest request = LungRequest.Create("tables", "QcS74OK.M4L77werD9BhsrGGPjixUgKwjVmFrfXQ");
+        var response = await request.Fetch<List<Table>>();
 
-        if (anchor == null)
+        foreach (var table in response.data)
         {
-            Debug.Log("Anchor not found");
-            return;
+            Debug.Log($"Table: {table.name}({table.id})");
         }
-
-        Debug.Log(anchor.TestOn);
     }
 
-    [MenuItem("Tools/Fetch!")]
-    public static async void Fetch()
+    [MenuItem("Debug/Request Entries!")]
+    public static async void RequestEntries()
     {
-        // var request = WebRequest.To("http://localhost/api/v0/external/tables/");
-        var request = WebRequest.To("http://localhost/api/v0/external/tables/87/entries");
+        LungRequest request = LungRequest.Create("tables/87/entries", "QcS74OK.M4L77werD9BhsrGGPjixUgKwjVmFrfXQ");
+        var response = await request.Fetch<List<Entry>>();
 
-        request.SetBearerAuth("QcS74OK.M4L77werD9BhsrGGPjixUgKwjVmFrfXQ");
-
-        WebResponse response = await request.SendAsync();
-
-        if (response.Success)
+        foreach (var entry in response.data)
         {
-            Debug.Log(response.Contents);
-        }
-        else
-        {
-            Debug.Log(response.HttpErrorMessage);
+            Debug.Log($"------------ Entry {entry.uuid} ------------");
+            foreach (var localization in entry.localizations)
+            {
+                Debug.Log($"{localization.locale.code}: {localization.text}");
+            }
         }
     }
+
+    [MenuItem("Debug/Request Info!")]
+    public static async void RequestInfo()
+    {
+        LungRequest request = LungRequest.Create("info", "QcS74OK.M4L77werD9BhsrGGPjixUgKwjVmFrfXQ");
+        var response = await request.Fetch<Project>();
+
+        Debug.Log($"Title: {response.data.title}");
+        Debug.Log($"Description: {response.data.description}");
+        Debug.Log($"Mother Locale: {response.data.mother_locale.name}");
+        Debug.Log("Locales: ");
+        foreach (var locale in response.data.locales)
+        {
+            Debug.Log($"{locale.name} ({locale.code})");
+        }
+    }
+
 
     public async Task FetchAll()
     {
