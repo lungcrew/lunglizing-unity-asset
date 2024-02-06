@@ -22,6 +22,20 @@ public class MyEditorWindow : EditorWindow
         Debug.Log(LungSettings.instance.Test);
     }
 
+    [MenuItem("Tools/Test Anchor!")]
+    public static void Anchor()
+    {
+        DevelopmentAnchor anchor = Resources.Load<DevelopmentAnchor>("DevelopmentAnchor");
+
+        if (anchor == null)
+        {
+            Debug.Log("Anchor not found");
+            return;
+        }
+
+        Debug.Log(anchor.TestOn);
+    }
+
     [MenuItem("Tools/Fetch!")]
     public static async void Fetch()
     {
