@@ -1,3 +1,12 @@
+# [1.1.0](https://github.com/lungcrew/unity-lungfetcher/compare/v1.0.0...v1.1.0) (2024-02-06)
+
+
+### Features
+
+* Forcing version up ([47aed04](https://github.com/lungcrew/unity-lungfetcher/commit/47aed04dccd2c046ece2645d3477492506dc91ec))
+* Forcing version up ([6b66f09](https://github.com/lungcrew/unity-lungfetcher/commit/6b66f09ed26250cf3f48d57d64aa65b67569e3e3))
+* Forcing Version up ([fb5ac3f](https://github.com/lungcrew/unity-lungfetcher/commit/fb5ac3f783ac2e4b1d471233f86f9cc09dd88e20))
+
 # 1.0.0 (2024-02-06)
 
 
