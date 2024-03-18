@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Events;
@@ -256,15 +257,25 @@ namespace Lungfetcher.Web
         /// Performs the request asynchronously.
         /// </summary>
         /// <returns></returns>
-        public virtual async Task<WebResponse> SendAsync()
+        public virtual async Task<WebResponse> SendAsync(CancellationToken token = default)
         {
             _unityWebRequest = GenerateRequest();
             UnityWebRequestAsyncOperation operation = _unityWebRequest.SendWebRequest();
 
 
             while (!operation.isDone)
+            {
+                if (token.IsCancellationRequested)
+                {
+                    _unityWebRequest.Dispose();
+                    Debug.Log("Task WebRequest Cancelled");
+                    
+                    token.ThrowIfCancellationRequested();
+                }
+                
                 await Task.Yield();
-
+            }
+                
             WebResponse response = GenerateResponse(_unityWebRequest);
 
             OnFinalizeAction?.Invoke(response);
