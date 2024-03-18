@@ -1,0 +1,91 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 36f9d7ad17534d7bbe25f67032ebfb08, type: 3}
+  m_Name: ProjectLungfetcher
+  m_EditorClassIdentifier: 
+  apiKey: QcS74OK.M4L77werD9BhsrGGPjixUgKwjVmFrfXQ
+  test: 1
+  tableDic:
+    keyData: 
+    valueData: []
+  projectInfo:
+    id: 15
+    mother_locale_id: 43
+    title: 
+    description: Deleniti quos voluptatem sed eos ut doloribus aspernatur cum. Voluptatem
+      itaque autem in dolores est quia inventore mollitia. Praesentium nemo facilis
+      voluptas. Dolorem adipisci in cupiditate impedit.
+    test: 0
+    entries_count: 240
+    mother_locale:
+      id: 0
+      project_id: 0
+      code: 
+      name: 
+    locales: []
+  tableList:
+  - id: 80
+    type_id: 1
+    name: LightCoral
+    description: Ut et tempora veritatis fugiat totam qui et.
+    type:
+      id: 1
+      name: Text
+  - id: 81
+    type_id: 1
+    name: Tomato
+    description: Non eos et non maiores eligendi dicta.
+    type:
+      id: 1
+      name: Text
+  - id: 82
+    type_id: 1
+    name: IndianRed
+    description: Quaerat necessitatibus quo incidunt rem.
+    type:
+      id: 1
+      name: Text
+  - id: 83
+    type_id: 1
+    name: Fuchsia
+    description: Aut beatae adipisci harum optio a blanditiis voluptatum.
+    type:
+      id: 1
+      name: Text
+  - id: 84
+    type_id: 1
+    name: Violet
+    description: Commodi itaque illum dolorum non in alias dolorem.
+    type:
+      id: 1
+      name: Text
+  - id: 85
+    type_id: 1
+    name: LightGray
+    description: Est quisquam necessitatibus suscipit ab omnis ipsam.
+    type:
+      id: 1
+      name: Text
+  - id: 86
+    type_id: 1
+    name: Tomato
+    description: Nulla velit accusamus vero qui alias porro.
+    type:
+      id: 1
+      name: Text
+  - id: 87
+    type_id: 1
+    name: Silver
+    description: Praesentium facere consequatur voluptatem aliquid libero.
+    type:
+      id: 1
+      name: Text
