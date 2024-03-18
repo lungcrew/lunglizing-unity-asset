@@ -1,0 +1,5 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
+    <uie:ObjectField label="Project" name="project-object" type="Lungfetcher.Editor.Scriptables.ProjectSo, Lungfecther.Editor" binding-path="project" style="position: relative; flex-wrap: wrap; height: 18px;" />
+    <ui:DropdownField label="Table" index="-1" name="tables-dropdown" />
+    <ui:EnumField label="Enum" binding-path="strategy" type="Lungfetcher.Editor.Scriptables.TableSo+TableStrategy, Lungfecther.Editor" name="strategy-enum" />
+</ui:UXML>
