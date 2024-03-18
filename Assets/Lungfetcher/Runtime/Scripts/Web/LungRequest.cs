@@ -1,4 +1,6 @@
+using System;
 using System.Diagnostics;
+using System.Threading;
 using System.Threading.Tasks;
 using Lungfetcher.Development;
 using UnityEngine;
@@ -55,16 +57,23 @@ namespace Lungfetcher.Web
 
         #region Fetching
 
-        public async Task<LungResponse<T>> Fetch<T>() where T : class
+        public async Task<LungResponse<T>> Fetch<T>(CancellationToken token = default) where T : class
         {
-            WebResponse response = await _request.SendAsync();
+            try
+            {
+                WebResponse response = await _request.SendAsync(token);
+            
+                if (!response.Success)
+                {
+                    return default;
+                }
 
-            if (!response.Success)
+                return response.GetBodyAs<LungResponse<T>>();
+            }
+            catch (OperationCanceledException)
             {
                 return default;
             }
-
-            return response.GetBodyAs<LungResponse<T>>();
         }
 
         #endregion
