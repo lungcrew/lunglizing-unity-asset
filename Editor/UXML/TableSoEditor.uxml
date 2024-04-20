@@ -1,5 +1,11 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
     <uie:ObjectField label="Project" name="project-object" type="Lungfetcher.Editor.Scriptables.ProjectSo, Lungfecther.Editor" binding-path="project" style="position: relative; flex-wrap: wrap; height: 18px;" />
-    <ui:DropdownField label="Table" index="-1" name="tables-dropdown" />
-    <ui:EnumField label="Enum" binding-path="strategy" type="Lungfetcher.Editor.Scriptables.TableSo+TableStrategy, Lungfecther.Editor" name="strategy-enum" />
+    <ui:DropdownField label="Project Table" name="tables-dropdown" index="-1" />
+    <ui:EnumField label="Strategy" binding-path="strategy" type="Lungfetcher.Editor.Scriptables.TableSo+TableStrategy, Lungfecther.Editor" name="strategy-enum" />
+    <uie:ObjectField label="Table Reference" type="UnityEditor.Localization.LocalizationTableCollection, Unity.Localization.Editor" name="table-reference-object" binding-path="stringTableCollection" />
+    <ui:Label tabindex="-1" text="Locales" parse-escape-sequences="true" display-tooltip-when-elided="true" />
+    <ui:ScrollView name="locales-view" horizontal-scroller-visibility="Hidden" />
+    <ui:Button text="Sync" parse-escape-sequences="true" display-tooltip-when-elided="true" name="sync-table-btn" />
+    <ui:ScrollView name="progress-view" />
+    <ui:Label tabindex="-1" text="Last Synced at:" parse-escape-sequences="true" display-tooltip-when-elided="true" name="updated-label" />
 </ui:UXML>

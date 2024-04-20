@@ -1,4 +1,6 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
-    <ui:TextField picking-mode="Ignore" binding-path="apiKey" name="api-key" label="API Key" style="justify-content: flex-start; align-self: stretch; flex-wrap: wrap;" />
-    <ui:Button text="Sync Project" parse-escape-sequences="true" display-tooltip-when-elided="true" name="sync-project" style="height: 22px;" />
+    <ui:TextField picking-mode="Ignore" binding-path="apiKey" name="api-key-text" label="API Key" style="justify-content: flex-start; align-self: stretch; flex-wrap: wrap;" />
+    <ui:Button text="Sync Project" parse-escape-sequences="true" display-tooltip-when-elided="true" name="sync-project-btn" style="height: 22px;" />
+    <ui:Button text="Sync Tables" parse-escape-sequences="true" display-tooltip-when-elided="true" name="sync-tables-btn" />
+    <ui:ScrollView name="progress-view" />
 </ui:UXML>

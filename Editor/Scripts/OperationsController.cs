@@ -1,145 +1,66 @@
 ﻿using System.Collections.Generic;
-using Lungfetcher.Editor.Helper;
-using Lungfetcher.Editor.Scriptables;
-using UnityEngine;
+using Lungfetcher.Data;
 
 namespace Lungfetcher.Editor
 {
     public static class OperationsController
     {
-        private static LongTableRequestDictionary _tableRequestDic = new LongTableRequestDictionary();
-        private static LongProjectRequestDictionary _projectRequestsDic = new LongProjectRequestDictionary();
-        private static ProjectUpdateRequestDictionary _projectUpdateRequestDic = new ProjectUpdateRequestDictionary();
-
-        public static RequestOperation RequestProjectUpdate(ProjectSo projectSo)
+        private static Dictionary<long, FetchOperation<List<EntriesLocale>>> _entriesLocaleFetchDic = new Dictionary<long, FetchOperation<List<EntriesLocale>>>();
+        private static Dictionary<string, FetchOperation<List<Table>>> _projectTablesFetchDic = new Dictionary<string, FetchOperation<List<Table>>>();
+        private static Dictionary<string, FetchOperation<Project>> _projectInfoFetchDic = new Dictionary<string, FetchOperation<Project>>();
+        
+        public static FetchOperation<Project> RequestFetchProjectInfo(string endpoint, string accessKey)
         {
-            if (_projectUpdateRequestDic.ContainsKey(projectSo))
+            bool contains = _projectInfoFetchDic.TryGetValue(accessKey, out var fetchOperation);
+            
+            if (contains)
             {
-                return null;
+                return fetchOperation;
             }
 
-            var requestOperation = new RequestOperation();
+            fetchOperation = new FetchOperation<Project>();
             
-            _projectUpdateRequestDic.Add(projectSo, requestOperation);
+            _projectInfoFetchDic.Add(accessKey, fetchOperation);
+            fetchOperation.OnFinished += () => _projectInfoFetchDic.Remove(accessKey);
+                
+            fetchOperation.Fetch(endpoint, accessKey);
             
-            requestOperation.OnFinished += () => RemoveProjectUpdateRequest(projectSo);
-            
-            requestOperation.UpdateProject(projectSo);
-            
-            return requestOperation;
+            return fetchOperation;
         }
         
-        public static RequestOperation RequestTableEntries(long tableId, long projectId)
+        public static FetchOperation<List<Table>> RequestFetchProjectTables(string endpoint, string accessKey)
         {
-            if (_tableRequestDic.ContainsKey(tableId))
+            bool contains = _projectTablesFetchDic.TryGetValue(accessKey, out var fetchOperation);
+            
+            if (contains)
             {
-                Debug.LogError("Request already in progress");
-                return null;
+                return fetchOperation;
+            }
+
+            fetchOperation = new FetchOperation<List<Table>>();
+            
+            _projectTablesFetchDic.Add(accessKey, fetchOperation);
+            fetchOperation.OnFinished += () => _projectTablesFetchDic.Remove(accessKey);
+            fetchOperation.Fetch(endpoint, accessKey);
+
+            return fetchOperation;
+        }
+
+        public static FetchOperation<List<EntriesLocale>> RequestFetchTableEntries(long tableId, string accessKey)
+        {
+            bool contains = _entriesLocaleFetchDic.TryGetValue(tableId, out var fetchOperation);
+
+            if (contains)
+            {
+                return fetchOperation;
             }
             
-            var requestOperation = new RequestOperation();
+            fetchOperation = new FetchOperation<List<EntriesLocale>>();
+            _entriesLocaleFetchDic.Add(tableId, fetchOperation);
+            fetchOperation.OnFinished += () => _entriesLocaleFetchDic.Remove(tableId);
+            fetchOperation.Fetch("tables/" + tableId + "/localized-entries", accessKey);
             
-            _tableRequestDic.Add(tableId, requestOperation);
-            AddRequestToProject(projectId, requestOperation);
-            
-            requestOperation.OnFinished += () => RemoveRequestFromProject(projectId, requestOperation);
-            requestOperation.OnFinished += () => RemoveTableRequest(tableId);
-
-            return requestOperation;
-        }
-
-        public static void RemoveProjectUpdateRequest(ProjectSo projectSo)
-        {
-            if (!ContainsProjectUpdateRequest(projectSo))
-            {
-                return;
-            }
-            
-            var requestOperation = _projectUpdateRequestDic[projectSo];
-            
-            if(!requestOperation.IsFinished)
-                requestOperation.CancelOperation();
-            
-            _projectUpdateRequestDic.Remove(projectSo);
-        }
-        
-        public static void RemoveTableRequest(long tableId)
-        {
-            var requestOperation = GetTableRequest(tableId);
-            
-            if (requestOperation == null)
-            {
-                return;
-            }
-            
-            if(!requestOperation.IsFinished)
-                requestOperation.CancelOperation();
-            
-            _tableRequestDic.Remove(tableId);
-        }
-        
-
-        private static void AddRequestToProject(long projectId, RequestOperation requestOperation)
-        {
-            if (ContainsProjectRequests(projectId))
-            {
-                _projectRequestsDic[projectId].Add(requestOperation);
-            }
-            else
-            {
-                _projectRequestsDic.Add(projectId, new List<RequestOperation>(){requestOperation});
-            }
-        }
-
-        private static void RemoveRequestFromProject(long projectId, RequestOperation requestOperation)
-        {
-            var containProject = _projectRequestsDic.TryGetValue(projectId, out var requestOperationList);
-            
-            if (!containProject)
-            {
-                return;
-            }
-            
-            requestOperationList.Remove(requestOperation);
-            
-            if(!requestOperation.IsFinished)
-                requestOperation.CancelOperation();
-            
-            if (requestOperationList.Count <= 0)
-                _projectRequestsDic.Remove(projectId);
-        }
-
-        public static RequestOperation GetProjectUpdateRequest(ProjectSo projectSo)
-        {
-            bool containsRequest = _projectUpdateRequestDic.TryGetValue(projectSo, out var request);
-            return containsRequest ? request : null;
-        }
-        
-        public static RequestOperation GetTableRequest(long tableId)
-        {
-            bool containsRequest = _tableRequestDic.TryGetValue(tableId, out var request);
-            return containsRequest ? request : null;
-        }
-        
-        public static List<RequestOperation> GetProjectRequests(long projectId)
-        {
-            bool containsRequests = _projectRequestsDic.TryGetValue(projectId, out var requestList);
-            return containsRequests ? requestList : null;
-        }
-
-        public static bool ContainsProjectUpdateRequest(ProjectSo projectSo)
-        {
-            return _projectUpdateRequestDic.ContainsKey(projectSo);
-        }
-
-        public static bool ContainsTableRequest(long tableId)
-        {
-            return _tableRequestDic.ContainsKey(tableId);
-        }
-
-        public static bool ContainsProjectRequests(long projectId)
-        {
-            return _projectRequestsDic.ContainsKey(projectId);
+            return fetchOperation;
         }
     }
 }
