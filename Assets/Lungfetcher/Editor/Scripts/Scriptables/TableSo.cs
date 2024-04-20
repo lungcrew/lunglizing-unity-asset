@@ -1,9 +1,14 @@
-﻿using System.Collections.Generic;
-using System.Linq;
+﻿using System;
+using System.Collections.Generic;
 using Lungfetcher.Data;
 using Lungfetcher.Helper;
 using UnityEditor;
+using UnityEditor.Localization;
+using UnityEditor.Localization.UI;
 using UnityEngine;
+using UnityEngine.Events;
+using UnityEngine.Localization;
+using UnityEngine.Localization.Tables;
 
 namespace Lungfetcher.Editor.Scriptables
 {
@@ -13,14 +18,22 @@ namespace Lungfetcher.Editor.Scriptables
         [SerializeField]private ProjectSo project;
         [SerializeField]private Table tableInfo;
         [SerializeField]private TableStrategy strategy;
-        [SerializeField]private LocalizationAsset localizationTable;
+        [SerializeField]private StringTableCollection stringTableCollection;
+        [SerializeField]private string lastUpdate = "";
+        [SerializeField]private List<LocaleField> locales = new List<LocaleField>();
         
         private LongEntryDictionary _entryDic;
-        
         public ProjectSo Project => project;
         public Table TableInfo => tableInfo;
         public TableStrategy Strategy => strategy;
-        public LocalizationAsset LocalizationTable => localizationTable;
+        public StringTableCollection StringTableCollection => stringTableCollection;
+        public string LastUpdate => lastUpdate;
+        public List<LocaleField> Locales => locales;
+        public bool IsUpdatingEntries { get; private set; } = false;
+        public FetchOperation<List<EntriesLocale>> FetchEntriesOperation { get; private set; }
+        
+        public event UnityAction OnBeginEntryUpdate;
+        public event UnityAction OnFinishEntryUpdate;
         
         public enum TableStrategy
         {
@@ -28,90 +41,192 @@ namespace Lungfetcher.Editor.Scriptables
             Custom
         }
 
-        public void SetupTable(Table table)
+        public void ProjectChanged(ProjectSo newProject, ProjectSo oldProject)
         {
-            UpdateTableInfo(table);
-        }
+            if(tableInfo == null) return;
+            
+            if (oldProject != null && oldProject != newProject) 
+                UpdateTableInfo(null, oldProject);
 
-        public void UpdateTableInfo(Table table)
-        {
-            tableInfo = table;
-            EditorUtility.SetDirty(this);
-            AssetDatabase.SaveAssetIfDirty(this);
-        }
-
-        public void UpdateEntries(List<Entry> entries, bool removeUnused = false)
-        {
-            if (_entryDic.Count <= 0)
+            if (IsUpdatingEntries)
             {
-                foreach (Entry entry in entries)
-                {
-                    _entryDic.Add(entry.id, entry);
-                }
-            }
-            else
-            {
-                if(removeUnused)
-                    RemoveUnusedEntries(entries);
-                
-                foreach (Entry entry in entries)
-                {
-                    if (_entryDic.TryGetValue(entry.id, out var value))
-                    {
-                        _entryDic[entry.id] = entry;
-                    }
-                    else
-                    {
-                        _entryDic.Add(entry.id, entry);
-                    }
-                }
-            }
-
-        }
-
-        public void UpdateEntry(Entry entry)
-        {
-            if (_entryDic.Count <= 0)
-            {
-                _entryDic.Add(entry.id, entry);
-            }
-            else
-            {
-                if (_entryDic.TryGetValue(entry.id, out var value))
-                {
-                    _entryDic[entry.id] = entry;
-                }
-                else
-                {
-                    _entryDic.Add(entry.id, entry);
-                }
+                FetchEntriesOperation = null;
+                FinishEntryFetch();
             }
         }
         
-        public void RemoveUnusedEntries(List<Entry> entries)
+
+        public void UpdateTableInfo(Table table, ProjectSo projectSo = null)
         {
-            List<KeyValuePair<long, Entry>> entryDicTempList = _entryDic.ToList();
-            
-            foreach (KeyValuePair<long, Entry> entry in entryDicTempList.Where(valuePair => 
-                         entries.Find(x => x.id == valuePair.Key) == null))
+            if (projectSo == null) projectSo = project;
+            Table oldTableInfo = tableInfo;
+            tableInfo = table;
+            if(!projectSo) return;
+            if (oldTableInfo.id != 0)
             {
-                RemoveEntry(entry.Key);
+                if (table!= null && table.id != 0) 
+                    projectSo.SwitchTableSoId(this, oldTableInfo.id ,table.id);
+
+                if (table== null || table.id == 0) 
+                    projectSo.RemoveTableSo(this, oldTableInfo.id);
+            }
+            else
+            {
+                if (table != null) 
+                    projectSo.AddTableSo(this, table.id);
+            }
+            
+            EditorUtility.SetDirty(this);
+        }
+        
+        public void UpdateLocales()
+        {
+            if (!project) return;
+
+            List<LocaleField> updatedLocales = new List<LocaleField>();
+            
+            foreach (var localeInfo in project.ProjectInfo.locales)
+            {
+                if (locales.Count > 0)
+                {
+                    var foundLocaleField = locales.Find(x => x.id == localeInfo.id);
+                    if (foundLocaleField != null)
+                    {
+                        updatedLocales.Add(foundLocaleField);
+                        continue;
+                    }
+                    updatedLocales.Add(new LocaleField(localeInfo));
+                }
+                else
+                {
+                    updatedLocales.Add(new LocaleField(localeInfo));
+                }
+            }
+
+            locales = updatedLocales;
+            EditorUtility.SetDirty(this);
+        }
+
+        public void FetchEntries()
+        {
+            if(!project || tableInfo == null || IsUpdatingEntries) return;
+            
+            FetchEntriesOperation = OperationsController.RequestFetchTableEntries(tableInfo.id, project.ApiKey);
+            FetchEntriesOperation.OnResponse += CreateEntries;
+            FetchEntriesOperation.OnFinished += FinishEntryFetch;
+            
+            IsUpdatingEntries = true;
+            OnBeginEntryUpdate?.Invoke();
+            
+            project.RegisterTableFetch(tableInfo, FetchEntriesOperation);
+        }
+
+        private void CreateEntries(List<EntriesLocale> entriesLocales)
+        {
+            if(!stringTableCollection || entriesLocales == null) return;
+            stringTableCollection.ClearAllEntries();
+            
+            foreach (var entryLocale in entriesLocales)
+            {
+                var localeField = locales.Find(locale => locale.id == entryLocale.locale_id);
+                if(localeField == null || !localeField.Locale) continue;
+
+                var localizationTable = stringTableCollection.GetTable(localeField.Locale.Identifier);
+                if (!localizationTable)
+                {
+                    localizationTable = stringTableCollection.AddNewTable(localeField.Locale.Identifier);
+                }
+                
+                var stringTable = localizationTable as StringTable;
+                if(!stringTable) return;
+                foreach (var entry in entryLocale.localizations)
+                {
+                    string key = entry.entry_readable_key;
+                    if(strategy == TableStrategy.UUID || string.IsNullOrEmpty(key))
+                        key = entry.entry_uuid;
+                    
+                    stringTable.AddEntry(key, entry.text);
+                }
+            }
+            
+            EditorUtility.SetDirty(stringTableCollection);
+            EditorUtility.SetDirty(stringTableCollection.SharedData);
+
+            if (EditorWindow.HasOpenInstances<LocalizationTablesWindow>())
+            {
+                var wnd = EditorWindow.GetWindow(typeof(LocalizationTablesWindow));
+                if (!wnd) return;
+                wnd.Close();
+                LocalizationTablesWindow.ShowWindow(stringTableCollection);
+            }
+            else
+            {
+                LocalizationTablesWindow.ShowWindow(stringTableCollection);
             }
         }
 
-        public Entry GetEntry(long id)
+        private void UpdateEntry(LocalizedEntry entry, StringTable stringTable)
         {
-            return _entryDic.TryGetValue(id, out var value) ? value : null;
+            if (strategy == TableStrategy.UUID)
+            {
+                if(string.IsNullOrWhiteSpace(entry.entry_readable_key)) return;
+                
+                var entryKey = stringTable.GetEntry(entry.entry_readable_key);
+                entryKey?.RemoveFromTable();
+                
+                stringTable.AddEntry(entry.entry_uuid, entry.text);
+            }
+            else
+            {
+                if (string.IsNullOrWhiteSpace(entry.entry_readable_key))
+                {
+                    stringTable.AddEntry(entry.entry_uuid, entry.text);
+                }
+                else
+                {
+                    var entryUuid = stringTable.GetEntry(entry.entry_uuid);
+                    entryUuid?.RemoveFromTable();
+                    
+                    stringTable.AddEntry(entry.entry_readable_key, entry.text);
+                }
+            }
         }
+       
 
-        public void RemoveEntry(long id)
+        private void FinishEntryFetch()
         {
-            _entryDic.Remove(id);
+            FetchEntriesOperation.OnFinished -= FinishEntryFetch;
+            FetchEntriesOperation.OnResponse -= CreateEntries;
+            FetchEntriesOperation = null;
+
+            if (!IsUpdatingEntries) return;
+            IsUpdatingEntries = false;
+            OnFinishEntryUpdate?.Invoke();
         }
+    }
 
-        public void RemoveAllEntries()
+    [Serializable]
+    public class TableSoList
+    {
+        public List<TableSo> tableSos = new List<TableSo>();
+    }
+
+    [Serializable]
+    public class LocaleField
+    {
+        [SerializeField]private Locale locale;
+
+        public string code;
+        public long id;
+        public string name;
+
+        public Locale Locale => locale;
+
+        public LocaleField(ProjectLocale projectLocale)
         {
-            _entryDic.Clear();
+            name = projectLocale.name;
+            id = projectLocale.id;
+            code = projectLocale.code;
         }
     }
 }

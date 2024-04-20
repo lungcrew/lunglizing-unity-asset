@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Lungfetcher.Development;
 using UnityEngine;
+using Debug = UnityEngine.Debug;
 
 namespace Lungfetcher.Web
 {
@@ -33,6 +34,7 @@ namespace Lungfetcher.Web
         #region Fields
 
         private WebRequest _request;
+        public WebRequest Request => _request;
 
         #endregion
 
@@ -62,7 +64,7 @@ namespace Lungfetcher.Web
             try
             {
                 WebResponse response = await _request.SendAsync(token);
-            
+                
                 if (!response.Success)
                 {
                     return default;

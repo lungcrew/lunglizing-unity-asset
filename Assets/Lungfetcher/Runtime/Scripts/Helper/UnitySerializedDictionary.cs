@@ -1,15 +1,17 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
 namespace Lungfetcher.Helper
 {
+    [Serializable]
     public abstract class UnitySerializedDictionary<TKey, TValue> : Dictionary<TKey, TValue>, ISerializationCallbackReceiver
     {
-        [SerializeField, HideInInspector]
+        [SerializeField]
         private List<TKey> keyData = new List<TKey>();
 	    
-        [SerializeField, HideInInspector]
+        [SerializeField]
         private List<TValue> valueData = new List<TValue>();
 
         void ISerializationCallbackReceiver.OnAfterDeserialize()

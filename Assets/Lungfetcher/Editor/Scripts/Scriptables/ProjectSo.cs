@@ -1,9 +1,11 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using Lungfetcher.Data;
+using Lungfetcher.Editor.Helper;
 using Lungfetcher.Helper;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.Events;
 
 
 namespace Lungfetcher.Editor.Scriptables
@@ -11,208 +13,265 @@ namespace Lungfetcher.Editor.Scriptables
     [CreateAssetMenu(fileName = "ProjectLungfetcher", menuName = "Lungfetcher/ProjectScriptable", order = 1)]
     public class ProjectSo : ScriptableObject
     {
-
         [SerializeField]
         private string apiKey = "QcS74OK.M4L77werD9BhsrGGPjixUgKwjVmFrfXQ";
         [SerializeField]
-        private LongScriptableObjectDictionary tableDic;
+        private LongTablesSoDictionary projectTableSoDic;
         [SerializeField]
         private Project projectInfo;
         [SerializeField]
         private List<Table> tableList;
         
+        private Dictionary<string, RequestOperation> _fetchingTablesDic = new Dictionary<string, RequestOperation>();
+
         public string ApiKey => apiKey;
         public Project ProjectInfo => projectInfo;
         public List<Table> TableList => tableList;
+        public FetchOperation<Project> FetchProjectInfoOperation { get; private set; }
+        public FetchOperation<List<Table>> FetchTableListOperation { get; private set; }
+        public LongTablesSoDictionary ProjectTableSoDic => projectTableSoDic;
+        public Dictionary<string, RequestOperation> FetchingTablesDic => _fetchingTablesDic;
 
         public string TablesPath { get; private set; }
+        public bool IsFetchingUpdate { get; private set; } = false;
 
-        public void SyncTables(List<Table> tables)
+        public event UnityAction OnBeginFetchUpdate;
+        public event UnityAction OnFinishFetchUpdate;
+        public event UnityAction<string, RequestOperation> OnTableSyncRequested;
+        public event UnityAction OnAllTableSyncFinished;
+
+        public bool IsFetchingTables()
+        {
+            return _fetchingTablesDic.Count > 0;
+        }
+
+        public void SyncTableInfo(List<Table> tables)
         {
             tableList = tables;
+            RemoveUnusedTablesFromDict();
+            
             EditorUtility.SetDirty(this);
-            AssetDatabase.SaveAssetIfDirty(this);
-        }
-        
-        public void SetProject(Project project)
-        {
-            SyncProjectInfo(project);
-            TablesPath = $"{AssetDatabase.GetAssetPath(this)}/Tables/";
         }
 
-        public void SyncProjectInfo(Project project)
+        private void RemoveUnusedTablesFromDict()
+        {
+            if(tableList.Count <= 0) return;
+            
+            foreach (long tableId in projectTableSoDic.Keys)
+            {
+                var tableFound = tableList.Find(table => tableId == table.id);
+                if (tableFound == null)
+                {
+                    projectTableSoDic.Remove(tableId);
+                }
+            }
+        }
+
+        public void SyncProjectInfo(Project project, bool save = true)
         {
             projectInfo = project;
+            if(!save) return;
+            
             EditorUtility.SetDirty(this);
-            AssetDatabase.SaveAssetIfDirty(this);
+        }
+        
+
+        private void UpdateFetchStatus()
+        {
+            if (FetchProjectInfoOperation is { IsFinished: false })
+            {
+                if (IsFetchingUpdate) return;
+                IsFetchingUpdate = true; 
+                OnBeginFetchUpdate?.Invoke();
+                return;
+            }
+
+            if (FetchTableListOperation is { IsFinished: false })
+            {
+                if (IsFetchingUpdate) return;
+                IsFetchingUpdate = true; 
+                OnBeginFetchUpdate?.Invoke();
+                return;
+            }
+
+            if (IsFetchingUpdate)
+            {
+                IsFetchingUpdate = false;
+                OnFinishFetchUpdate?.Invoke();
+            }
         }
 
-        public void UpdateAllTables(List<Table> tables)
+        public void FetchUpdate()
         {
-            if (tableDic.Count <= 0)
+            if(IsFetchingUpdate) return;
+
+            FetchProjectInfo();
+            FetchTables();
+        }
+
+        public void FetchProjectInfo()
+        {
+            ReceiveProjectInfoFetch();
+            FetchProjectInfoOperation = OperationsController.RequestFetchProjectInfo("info", apiKey);
+            UpdateFetchStatus();
+            FetchProjectInfoOperation.OnFinished += ReceiveProjectInfoFetch;
+        }
+
+        public void FetchTables()
+        {
+            ReceiveTablesFetch();
+            FetchTableListOperation = OperationsController.RequestFetchProjectTables("tables", apiKey);
+            UpdateFetchStatus();
+            FetchTableListOperation.OnFinished += ReceiveTablesFetch;
+        }
+
+        private void ReceiveProjectInfoFetch()
+        {
+            if(FetchProjectInfoOperation == null) return;
+            
+            if(!FetchProjectInfoOperation.IsFinished) return;
+
+            if (FetchProjectInfoOperation.IsFinishedSuccessfully)
             {
-                foreach (Table table in tables)
-                {
-                    tableDic.Add(table.id, CreateTable(table));
-                }
+                if(FetchProjectInfoOperation.ResponseData != null)
+                    SyncProjectInfo(FetchProjectInfoOperation.ResponseData);
             }
             else
             {
-                foreach (Table table in tables)
-                {
-                    if (tableDic.TryGetValue(table.id, out var scriptableObject))
-                    {
-                        if (scriptableObject == null)
-                        {
-                            tableDic[table.id] = CreateTable(table);
-                        }
-                        else
-                        {
-                            TableSo tableSo = (TableSo)scriptableObject;
-                            tableSo.UpdateTableInfo(table);
-                        }
-                    }
-                    else
-                    {
-                        tableDic.Add(table.id, CreateTable(table));
-                    }
-                }
+                DebugErrors.ProjectInfoFailed(FetchProjectInfoOperation.AccessKey);
             }
+            
+            FetchProjectInfoOperation.OnFinished -= ReceiveProjectInfoFetch;
+            FetchProjectInfoOperation = null;
+            
+            UpdateFetchStatus();
         }
 
-        public void UpdateAllTableEntries(long tableId, List<Entry> entries, bool removeUnused = false)
+        private void ReceiveTablesFetch()
         {
-            if (tableDic.TryGetValue(tableId, out var scriptableObject))
+            if (FetchTableListOperation == null) return;
+
+            if (!FetchTableListOperation.IsFinished) return;
+
+            if (FetchTableListOperation.IsFinishedSuccessfully)
             {
-                if (!scriptableObject)
+                if (FetchTableListOperation.ResponseData != null)
+                    SyncTableInfo(FetchTableListOperation.ResponseData);
+            }
+            else
+            {
+                DebugErrors.ProjectFetchTablesFailed(FetchTableListOperation.AccessKey);
+            }
+
+            FetchTableListOperation.OnFinished -= ReceiveTablesFetch;
+            FetchTableListOperation = null;
+
+            UpdateFetchStatus();
+        }
+
+        public void AddTableSo(TableSo tableSo, long tableId)
+        {
+            if (projectInfo == null || tableList == null)
+            {
+                DebugErrors.ProjectMissingInfo();
+                return;
+            }
+            
+            if (!projectTableSoDic.TryGetValue(tableId, out var tableSoList))
+            {
+                tableSoList = new TableSoList
                 {
-                    DebugLog.TableReferenceMissing(tableId, ProjectInfo.id);
+                    tableSos = new List<TableSo> { tableSo }
+                };
+                projectTableSoDic.Add(tableId, tableSoList);
+            }
+            else
+            {
+                if (tableSoList.tableSos.Contains(tableSo))
+                {
                     return;
                 }
-                TableSo tableSo = (TableSo)scriptableObject;
-                tableSo.UpdateEntries(entries, removeUnused);
+
+                tableSoList.tableSos.Add(tableSo);
             }
-            else
-            {
-                DebugLog.TableNotFound(tableId, ProjectInfo.id);
-            }
-        }
-        
-        public void UpdateTableEntry(long tableId, Entry entry)
-        {
-            if (tableDic.TryGetValue(tableId, out var scriptableObject))
-            {
-                if (!scriptableObject)
-                {
-                    DebugLog.TableReferenceMissing(tableId, ProjectInfo.id);
-                    return;
-                }
-                TableSo tableSo = (TableSo)scriptableObject;
-                tableSo.UpdateEntry(entry);
-            }
-            else
-            {
-                DebugLog.TableNotFound(tableId, ProjectInfo.id);
-            }
-        }
-        
-        public TableSo CreateTable(Table table)
-        {
-            TableSo tableSo = CreateInstance<TableSo>();
-            AssetDatabase.CreateAsset(tableSo, $"{TablesPath}/{table.name}.asset");
-            tableSo.SetupTable(table);
-            return tableSo;
-        }
-        
-        public void UpdateTable(Table table)
-        {
-            if (tableDic.TryGetValue(table.id, out var value))
-            {
-                if (value == null)
-                {
-                    tableDic.Add(table.id, CreateTable(table));
-                }
-                else
-                {
-                    TableSo tableSo = (TableSo)value;
-                    tableSo.UpdateTableInfo(table);
-                }
-            }
-            else
-            {
-                tableDic.Add(table.id, CreateTable(table));
-            }
+
+            Debug.Log("Added " + tableId);
+            EditorUtility.SetDirty(this);
         }
 
-        public void RemoveAllTables()
+        public void SwitchTableSoId(TableSo tableSo, long oldTableId, long newTableId)
         {
-            List<KeyValuePair<long, ScriptableObject>> tableDicTempList = tableDic.ToList();
+            if (projectInfo == null || tableList == null)
+            {
+                DebugErrors.ProjectMissingInfo();
+                return;
+            }
+            Debug.Log("Switching");
+            RemoveTableSo(tableSo, oldTableId);
+            AddTableSo(tableSo, newTableId);
+        }
+
+        public void RemoveTableSo(TableSo tableSo, long tableId)
+        {
+            if (projectInfo == null || tableList == null)
+            {
+                DebugErrors.ProjectMissingInfo();
+                return;
+            }
+            Debug.Log("Removing " + tableId);
+
+            if (!projectTableSoDic.TryGetValue(tableId, out var tableSoList)) return;
+
+            if (!tableSoList.tableSos.Contains(tableSo)) return;
             
-            foreach (var valuePair in tableDicTempList.Where(tableValuePair 
-                         => tableValuePair.Value))
-            {
-                RemoveTable(valuePair.Key);
-            }
-            tableDic.Clear();
+            tableSoList.tableSos.Remove(tableSo);
+            if (tableSoList.tableSos.Count <= 0)
+                projectTableSoDic.Remove(tableId);
+
+            EditorUtility.SetDirty(this);
         }
 
-        public void RemoveUnusedTables(List<Table> tables)
+        public void RegisterTableFetch(Table table, RequestOperation requestOperation)
         {
-            List<KeyValuePair<long, ScriptableObject>> tableDicTempList = tableDic.ToList();
+            if(IsFetchingUpdate || _fetchingTablesDic.ContainsKey(table.name)) return;
+            if(tableList.Find(match => match.id == table.id) == null) return;
             
-            foreach (var valuePair in tableDicTempList.Where(tableValuePair =>
-                         tables.Find(x => x.id == tableValuePair.Key) == null))
+            _fetchingTablesDic.Add(table.name, requestOperation);
+            
+            requestOperation.OnFinished += () =>
             {
-               RemoveTable(valuePair.Key);
-            }
+                _fetchingTablesDic.Remove(table.name);
+                if(_fetchingTablesDic.Count <= 0) OnAllTableSyncFinished?.Invoke();
+            };
+            OnTableSyncRequested?.Invoke(table.name, requestOperation);
         }
 
-        public void RemoveTable(long tableId)
+        public void SyncTables()
         {
-            tableDic.Remove(tableId, out ScriptableObject value);
-            if (!value) return;
-            string path = AssetDatabase.GetAssetPath(value);
-            AssetDatabase.DeleteAsset(path);
-        }
-
-        public TableSo GetTable(long tableId)
-        {
-            if (tableDic.TryGetValue(tableId, out var scriptableObject))
+            List<long> emptyKeys = new List<long>();
+            foreach (var tableId in ProjectTableSoDic.Keys)
             {
-                if (scriptableObject) return (TableSo)scriptableObject;
+                var tableSoList = ProjectTableSoDic[tableId].tableSos;
                 
-                DebugLog.TableReferenceMissing(tableId, ProjectInfo.id);
-                return null;
-            }
-
-            DebugLog.TableNotFound(tableId, ProjectInfo.id);
-            return null;
-        }
-
-        public Entry GetEntryFromTable(long tableId, long entryId)
-        {
-            if (tableDic.TryGetValue(tableId, out var scriptableObject))
-            {
-                if (!scriptableObject)
+                for (int i = 0; i < tableSoList.Count;)
                 {
-                    DebugLog.TableReferenceMissing(tableId, ProjectInfo.id);
-                    return null;
+                    var tableSo = tableSoList[i];
+                    if (tableSo == null)
+                    {
+                        tableSoList.RemoveAt(i);
+                        continue;
+                    }
+                    tableSo.FetchEntries();
+                    i++;
                 }
                 
-                TableSo tableSo = (TableSo)scriptableObject;
-                
-                return tableSo.GetEntry(entryId);
+                if(tableSoList.Count <= 0) emptyKeys.Add(tableId);
             }
-            
-            DebugLog.TableNotFound(tableId, ProjectInfo.id);
-            return null;
-        }
 
-        public string GetProjectPath()
-        {
-            return AssetDatabase.GetAssetPath(this);
+            foreach (var id in emptyKeys)
+            {
+                projectTableSoDic.Remove(id);
+            }
         }
-        
-        
     }
 }

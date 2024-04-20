@@ -28,7 +28,7 @@ namespace Lungfetcher.Web
         private object _body;
         private byte[] _bodyRaw;
         private string _contentType;
-
+        
         private UnityWebRequest _unityWebRequest;
 
         private Dictionary<string, string> _httpHeaders;
@@ -261,8 +261,7 @@ namespace Lungfetcher.Web
         {
             _unityWebRequest = GenerateRequest();
             UnityWebRequestAsyncOperation operation = _unityWebRequest.SendWebRequest();
-
-
+            
             while (!operation.isDone)
             {
                 if (token.IsCancellationRequested)
@@ -275,9 +274,9 @@ namespace Lungfetcher.Web
                 
                 await Task.Yield();
             }
-                
+            
             WebResponse response = GenerateResponse(_unityWebRequest);
-
+            
             OnFinalizeAction?.Invoke(response);
 
             _unityWebRequest.Dispose();
