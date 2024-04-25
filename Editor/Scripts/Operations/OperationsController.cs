@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using Lungfetcher.Data;
 
-namespace Lungfetcher.Editor
+namespace Lungfetcher.Editor.Operations
 {
     public static class OperationsController
     {

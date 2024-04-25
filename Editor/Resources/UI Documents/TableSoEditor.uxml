@@ -6,6 +6,7 @@
     <ui:Label tabindex="-1" text="Locales" parse-escape-sequences="true" display-tooltip-when-elided="true" />
     <ui:ScrollView name="locales-view" horizontal-scroller-visibility="Hidden" />
     <ui:Button text="Sync" parse-escape-sequences="true" display-tooltip-when-elided="true" name="sync-table-btn" />
+    <ui:Button text="Hard Sync" parse-escape-sequences="true" display-tooltip-when-elided="true" name="hard-sync-table-btn" />
     <ui:ScrollView name="progress-view" />
     <ui:Label tabindex="-1" text="Last Synced at:" parse-escape-sequences="true" display-tooltip-when-elided="true" name="updated-label" />
 </ui:UXML>

@@ -4,7 +4,6 @@ using Lungfetcher.Editor.Scriptables;
 
 namespace Lungfetcher.Editor
 {
-    using System.Collections.Generic;
     using UnityEditor;
     using UnityEngine;
 

@@ -1,20 +1,21 @@
 ﻿using System;
 using System.Collections.Generic;
 using Lungfetcher.Data;
+using Lungfetcher.Editor.Operations;
 using Lungfetcher.Helper;
 using UnityEditor;
 using UnityEditor.Localization;
-using UnityEditor.Localization.UI;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.Localization;
-using UnityEngine.Localization.Tables;
 
 namespace Lungfetcher.Editor.Scriptables
 {
     [CreateAssetMenu(fileName = "TableLungfetcher", menuName = "Lungfetcher/TableScriptable", order = 1)]
     public class TableSo : ScriptableObject
     {
+        #region Fields
+        
         [SerializeField]private ProjectSo project;
         [SerializeField]private Table tableInfo;
         [SerializeField]private TableStrategy strategy;
@@ -23,66 +24,89 @@ namespace Lungfetcher.Editor.Scriptables
         [SerializeField]private List<LocaleField> locales = new List<LocaleField>();
         
         private LongEntryDictionary _entryDic;
+        
+        #endregion
+        
+        #region Getters
+        
         public ProjectSo Project => project;
         public Table TableInfo => tableInfo;
         public TableStrategy Strategy => strategy;
         public StringTableCollection StringTableCollection => stringTableCollection;
         public string LastUpdate => lastUpdate;
         public List<LocaleField> Locales => locales;
-        public bool IsUpdatingEntries { get; private set; } = false;
-        public FetchOperation<List<EntriesLocale>> FetchEntriesOperation { get; private set; }
         
-        public event UnityAction OnBeginEntryUpdate;
-        public event UnityAction OnFinishEntryUpdate;
+        #endregion
+        
+        #region Properties
+        
+        public bool IsUpdatingEntries { get; private set; } = false;
+        public UpdateTableOperation UpdateTableOperationRef { get; private set; }
+        
+        #endregion
+        
+        #region Events
+        
+        public event UnityAction OnBeginTableEntriesUpdate;
+        public event UnityAction<bool> OnFinishTableEntriesUpdate;
+        public event UnityAction OnProjectDataUpdated;
+        
+        #endregion
+
+        #region Enum
         
         public enum TableStrategy
         {
             UUID,
-            Custom
+            ReadableKey
         }
+        
+        #endregion
+        
+        #region Methods
 
         public void ProjectChanged(ProjectSo newProject, ProjectSo oldProject)
         {
-            if(tableInfo == null) return;
-            
             if (oldProject != null && oldProject != newProject) 
-                UpdateTableInfo(null, oldProject);
+                ChangeTableInfo(null, oldProject);
+            
+            long tableId = tableInfo?.id ?? 0;
+            if(oldProject != null) oldProject.RemoveTableSo(this, tableId);
+            if(newProject != null) newProject.AddTableSo(this, tableId);
+            
+            lastUpdate = "";
 
             if (IsUpdatingEntries)
             {
-                FetchEntriesOperation = null;
-                FinishEntryFetch();
+                UpdateTableOperationRef?.CancelOperation();
+                UpdateTableOperationRef = null;
+                FinishTableUpdate();
             }
+            
+            UpdateLocales();
         }
         
 
-        public void UpdateTableInfo(Table table, ProjectSo projectSo = null)
+        public void ChangeTableInfo(Table table, ProjectSo projectSo = null)
         {
             if (projectSo == null) projectSo = project;
             Table oldTableInfo = tableInfo;
             tableInfo = table;
+            long newTableId = table?.id ?? 0;
+            long oldTableId = oldTableInfo?.id ?? 0;
             if(!projectSo) return;
-            if (oldTableInfo.id != 0)
-            {
-                if (table!= null && table.id != 0) 
-                    projectSo.SwitchTableSoId(this, oldTableInfo.id ,table.id);
+            
+            projectSo.SwitchTableSoId(this, oldTableId ,newTableId);
 
-                if (table== null || table.id == 0) 
-                    projectSo.RemoveTableSo(this, oldTableInfo.id);
-            }
-            else
-            {
-                if (table != null) 
-                    projectSo.AddTableSo(this, table.id);
-            }
+            lastUpdate = "";
             
             EditorUtility.SetDirty(this);
         }
-        
-        public void UpdateLocales()
+
+        private void UpdateLocales()
         {
             if (!project) return;
-
+            
             List<LocaleField> updatedLocales = new List<LocaleField>();
             
             foreach (var localeInfo in project.ProjectInfo.locales)
@@ -93,6 +117,7 @@ namespace Lungfetcher.Editor.Scriptables
                     if (foundLocaleField != null)
                     {
                         updatedLocales.Add(foundLocaleField);
+                        foundLocaleField.UpdateLocaleSoftData(localeInfo);
                         continue;
                     }
                     updatedLocales.Add(new LocaleField(localeInfo));
@@ -102,131 +127,73 @@ namespace Lungfetcher.Editor.Scriptables
                     updatedLocales.Add(new LocaleField(localeInfo));
                 }
             }
-
+            
             locales = updatedLocales;
             EditorUtility.SetDirty(this);
         }
 
-        public void FetchEntries()
+        public void SetLocales(List<LocaleField> localeFields)
+        {
+            locales = localeFields;
+            EditorUtility.SetDirty(this);
+        }
+
+        public void ProjectUpdated()
+        {
+            UpdateLocales();
+
+            if (tableInfo.id == 0) return;
+
+            var table = project.TableList.Find(target => target.id == tableInfo.id);
+            tableInfo = table;
+            
+            OnProjectDataUpdated?.Invoke();
+            EditorUtility.SetDirty(this);
+        }
+        
+        #endregion
+        
+        #region Updates
+
+        public void FetchEntries(bool hardSync = false)
         {
             if(!project || tableInfo == null || IsUpdatingEntries) return;
+            if(tableInfo.id == 0) return;
             
-            FetchEntriesOperation = OperationsController.RequestFetchTableEntries(tableInfo.id, project.ApiKey);
-            FetchEntriesOperation.OnResponse += CreateEntries;
-            FetchEntriesOperation.OnFinished += FinishEntryFetch;
+            UpdateTableOperationRef?.CancelOperation();
+            UpdateTableOperationRef = new UpdateTableOperation(this, hardSync);
+            
+            UpdateTableOperationRef.OnFinished += FinishTableUpdate;
             
             IsUpdatingEntries = true;
-            OnBeginEntryUpdate?.Invoke();
+            OnBeginTableEntriesUpdate?.Invoke();
             
-            project.RegisterTableFetch(tableInfo, FetchEntriesOperation);
+            project.RegisterTableUpdate(this, UpdateTableOperationRef);
         }
-
-        private void CreateEntries(List<EntriesLocale> entriesLocales)
+        
+        private void FinishTableUpdate()
         {
-            if(!stringTableCollection || entriesLocales == null) return;
-            stringTableCollection.ClearAllEntries();
-            
-            foreach (var entryLocale in entriesLocales)
+            bool success = UpdateTableOperationRef.IsFinishedSuccessfully;
+            UpdateTableOperationRef.OnFinished -= FinishTableUpdate;
+            if (UpdateTableOperationRef.IsFinishedSuccessfully)
             {
-                var localeField = locales.Find(locale => locale.id == entryLocale.locale_id);
-                if(localeField == null || !localeField.Locale) continue;
-
-                var localizationTable = stringTableCollection.GetTable(localeField.Locale.Identifier);
-                if (!localizationTable)
-                {
-                    localizationTable = stringTableCollection.AddNewTable(localeField.Locale.Identifier);
-                }
-                
-                var stringTable = localizationTable as StringTable;
-                if(!stringTable) return;
-                foreach (var entry in entryLocale.localizations)
-                {
-                    string key = entry.entry_readable_key;
-                    if(strategy == TableStrategy.UUID || string.IsNullOrEmpty(key))
-                        key = entry.entry_uuid;
-                    
-                    stringTable.AddEntry(key, entry.text);
-                }
+                lastUpdate = DateTime.Now.ToString();
+                EditorUtility.SetDirty(this);
             }
             
-            EditorUtility.SetDirty(stringTableCollection);
-            EditorUtility.SetDirty(stringTableCollection.SharedData);
-
-            if (EditorWindow.HasOpenInstances<LocalizationTablesWindow>())
-            {
-                var wnd = EditorWindow.GetWindow(typeof(LocalizationTablesWindow));
-                if (!wnd) return;
-                wnd.Close();
-                LocalizationTablesWindow.ShowWindow(stringTableCollection);
-            }
-            else
-            {
-                LocalizationTablesWindow.ShowWindow(stringTableCollection);
-            }
-        }
-
-        private void UpdateEntry(LocalizedEntry entry, StringTable stringTable)
-        {
-            if (strategy == TableStrategy.UUID)
-            {
-                if(string.IsNullOrWhiteSpace(entry.entry_readable_key)) return;
-                
-                var entryKey = stringTable.GetEntry(entry.entry_readable_key);
-                entryKey?.RemoveFromTable();
-                
-                stringTable.AddEntry(entry.entry_uuid, entry.text);
-            }
-            else
-            {
-                if (string.IsNullOrWhiteSpace(entry.entry_readable_key))
-                {
-                    stringTable.AddEntry(entry.entry_uuid, entry.text);
-                }
-                else
-                {
-                    var entryUuid = stringTable.GetEntry(entry.entry_uuid);
-                    entryUuid?.RemoveFromTable();
-                    
-                    stringTable.AddEntry(entry.entry_readable_key, entry.text);
-                }
-            }
-        }
-       
-
-        private void FinishEntryFetch()
-        {
-            FetchEntriesOperation.OnFinished -= FinishEntryFetch;
-            FetchEntriesOperation.OnResponse -= CreateEntries;
-            FetchEntriesOperation = null;
+            UpdateTableOperationRef = null;
 
             if (!IsUpdatingEntries) return;
-            IsUpdatingEntries = false;
-            OnFinishEntryUpdate?.Invoke();
+            IsUpdatingEntries = false; 
+            OnFinishTableEntriesUpdate?.Invoke(success);
         }
+        
+        #endregion
     }
 
     [Serializable]
     public class TableSoList
     {
         public List<TableSo> tableSos = new List<TableSo>();
-    }
-
-    [Serializable]
-    public class LocaleField
-    {
-        [SerializeField]private Locale locale;
-
-        public string code;
-        public long id;
-        public string name;
-
-        public Locale Locale => locale;
-
-        public LocaleField(ProjectLocale projectLocale)
-        {
-            name = projectLocale.name;
-            id = projectLocale.id;
-            code = projectLocale.code;
-        }
     }
 }

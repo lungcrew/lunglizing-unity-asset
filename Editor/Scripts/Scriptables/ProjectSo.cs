@@ -1,11 +1,12 @@
-﻿using System.Collections.Generic;
-using System.Linq;
+﻿using System;
+using System.Collections.Generic;
 using Lungfetcher.Data;
 using Lungfetcher.Editor.Helper;
-using Lungfetcher.Helper;
+using Lungfetcher.Editor.Operations;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.Events;
+using Logger = Lungfetcher.Helper.Logger;
 
 
 namespace Lungfetcher.Editor.Scriptables
@@ -13,42 +14,90 @@ namespace Lungfetcher.Editor.Scriptables
     [CreateAssetMenu(fileName = "ProjectLungfetcher", menuName = "Lungfetcher/ProjectScriptable", order = 1)]
     public class ProjectSo : ScriptableObject
     {
-        [SerializeField]
-        private string apiKey = "QcS74OK.M4L77werD9BhsrGGPjixUgKwjVmFrfXQ";
-        [SerializeField]
-        private LongTablesSoDictionary projectTableSoDic;
-        [SerializeField]
-        private Project projectInfo;
-        [SerializeField]
-        private List<Table> tableList;
+        #region Fields
+
+        [SerializeField]private string apiKey = "QcS74OK.M4L77werD9BhsrGGPjixUgKwjVmFrfXQ";
+        [SerializeField]private LongTablesSoDictionary projectTableSoDic;
+        [SerializeField]private Project projectInfo;
+        [SerializeField]private List<Table> tableList;
+        [SerializeField]private string lastUpdate = "";
+        [SerializeField]private List<LocaleField> projectLocales = new List<LocaleField>();
         
-        private Dictionary<string, RequestOperation> _fetchingTablesDic = new Dictionary<string, RequestOperation>();
+        private List<TableSo> _updatingTableSos = new List<TableSo>();
+        
+        #endregion
+
+        #region Getters
 
         public string ApiKey => apiKey;
         public Project ProjectInfo => projectInfo;
         public List<Table> TableList => tableList;
-        public FetchOperation<Project> FetchProjectInfoOperation { get; private set; }
-        public FetchOperation<List<Table>> FetchTableListOperation { get; private set; }
         public LongTablesSoDictionary ProjectTableSoDic => projectTableSoDic;
-        public Dictionary<string, RequestOperation> FetchingTablesDic => _fetchingTablesDic;
+        public List<TableSo> UpdatingTableSos => _updatingTableSos;
+        public string LastUpdate => lastUpdate;
+        public List<LocaleField> ProjectLocales => projectLocales;
+        
+        #endregion
 
-        public string TablesPath { get; private set; }
+        #region Properties
+
         public bool IsFetchingUpdate { get; private set; } = false;
+        public UpdateProjectOperation UpdateProjectOperationRef { get; private set; }
 
-        public event UnityAction OnBeginFetchUpdate;
-        public event UnityAction OnFinishFetchUpdate;
-        public event UnityAction<string, RequestOperation> OnTableSyncRequested;
-        public event UnityAction OnAllTableSyncFinished;
+        #endregion
 
-        public bool IsFetchingTables()
+        #region Enums
+        
+        private enum TableUpdateType
         {
-            return _fetchingTablesDic.Count > 0;
+            None,
+            SoftSyncTable,
+            HardSyncTable,
+            ProjectUpdated,
+            SyncLocales
+        }
+        
+        #endregion
+
+        #region Events
+        
+        public event UnityAction OnBeginProjectUpdate;
+        public event UnityAction OnFinishProjectUpdate;
+        public event UnityAction<TableSo, RequestOperation> OnTableSyncRequested;
+        public event UnityAction OnAllTableSyncFinished;
+        
+        #endregion
+
+        #region Updates
+
+        public bool IsSyncingTableSos()
+        {
+            return _updatingTableSos.Count > 0;
+        }
+        
+        public void FetchUpdate()
+        {
+            if(IsFetchingUpdate) return;
+
+            IsFetchingUpdate = true; 
+            OnBeginProjectUpdate?.Invoke();
+            UpdateProjectOperationRef = new UpdateProjectOperation(this);
+            UpdateProjectOperationRef.OnFinished += FinishFetch;
         }
 
-        public void SyncTableInfo(List<Table> tables)
+        public void SyncTablesInfo(List<Table> tables)
         {
             tableList = tables;
             RemoveUnusedTablesFromDict();
+            
+            EditorUtility.SetDirty(this);
+        }
+        
+        public void SyncProjectInfo(Project project)
+        {
+            projectInfo = project;
+            
+            if(projectInfo != null) UpdateLocales();
             
             EditorUtility.SetDirty(this);
         }
@@ -67,113 +116,56 @@ namespace Lungfetcher.Editor.Scriptables
             }
         }
 
-        public void SyncProjectInfo(Project project, bool save = true)
+        private void UpdateLocales()
         {
-            projectInfo = project;
-            if(!save) return;
+            List<LocaleField> updatedLocales = new List<LocaleField>();
+            foreach (var localeField in projectInfo.locales)
+            {
+                if (projectLocales.Count > 0)
+                {
+                    var foundLocaleField = projectLocales.Find(x => x.id == localeField.id);
+                    if (foundLocaleField != null)
+                    {
+                        updatedLocales.Add(foundLocaleField);
+                        foundLocaleField.UpdateLocaleSoftData(localeField);
+                        continue;
+                    }
+                    updatedLocales.Add(new LocaleField(localeField));
+                }
+                else
+                {
+                    updatedLocales.Add(new LocaleField(localeField));
+                }
+            }
+            
+            projectLocales = updatedLocales;
             
             EditorUtility.SetDirty(this);
         }
         
-
-        private void UpdateFetchStatus()
+        private void FinishFetch()
         {
-            if (FetchProjectInfoOperation is { IsFinished: false })
+            if (UpdateProjectOperationRef.IsFinishedSuccessfully || UpdateProjectOperationRef.Progress > 0)
             {
-                if (IsFetchingUpdate) return;
-                IsFetchingUpdate = true; 
-                OnBeginFetchUpdate?.Invoke();
-                return;
+                UpdateTableSosProjectData();
+                lastUpdate = DateTime.Now.ToString();
+                EditorUtility.SetDirty(this);
             }
 
-            if (FetchTableListOperation is { IsFinished: false })
-            {
-                if (IsFetchingUpdate) return;
-                IsFetchingUpdate = true; 
-                OnBeginFetchUpdate?.Invoke();
-                return;
-            }
-
-            if (IsFetchingUpdate)
-            {
-                IsFetchingUpdate = false;
-                OnFinishFetchUpdate?.Invoke();
-            }
+            UpdateProjectOperationRef = null;
+            IsFetchingUpdate = false;
+            OnFinishProjectUpdate?.Invoke();
         }
+        
+        #endregion
 
-        public void FetchUpdate()
-        {
-            if(IsFetchingUpdate) return;
-
-            FetchProjectInfo();
-            FetchTables();
-        }
-
-        public void FetchProjectInfo()
-        {
-            ReceiveProjectInfoFetch();
-            FetchProjectInfoOperation = OperationsController.RequestFetchProjectInfo("info", apiKey);
-            UpdateFetchStatus();
-            FetchProjectInfoOperation.OnFinished += ReceiveProjectInfoFetch;
-        }
-
-        public void FetchTables()
-        {
-            ReceiveTablesFetch();
-            FetchTableListOperation = OperationsController.RequestFetchProjectTables("tables", apiKey);
-            UpdateFetchStatus();
-            FetchTableListOperation.OnFinished += ReceiveTablesFetch;
-        }
-
-        private void ReceiveProjectInfoFetch()
-        {
-            if(FetchProjectInfoOperation == null) return;
-            
-            if(!FetchProjectInfoOperation.IsFinished) return;
-
-            if (FetchProjectInfoOperation.IsFinishedSuccessfully)
-            {
-                if(FetchProjectInfoOperation.ResponseData != null)
-                    SyncProjectInfo(FetchProjectInfoOperation.ResponseData);
-            }
-            else
-            {
-                DebugErrors.ProjectInfoFailed(FetchProjectInfoOperation.AccessKey);
-            }
-            
-            FetchProjectInfoOperation.OnFinished -= ReceiveProjectInfoFetch;
-            FetchProjectInfoOperation = null;
-            
-            UpdateFetchStatus();
-        }
-
-        private void ReceiveTablesFetch()
-        {
-            if (FetchTableListOperation == null) return;
-
-            if (!FetchTableListOperation.IsFinished) return;
-
-            if (FetchTableListOperation.IsFinishedSuccessfully)
-            {
-                if (FetchTableListOperation.ResponseData != null)
-                    SyncTableInfo(FetchTableListOperation.ResponseData);
-            }
-            else
-            {
-                DebugErrors.ProjectFetchTablesFailed(FetchTableListOperation.AccessKey);
-            }
-
-            FetchTableListOperation.OnFinished -= ReceiveTablesFetch;
-            FetchTableListOperation = null;
-
-            UpdateFetchStatus();
-        }
+        #region TableSos Management
 
         public void AddTableSo(TableSo tableSo, long tableId)
         {
             if (projectInfo == null || tableList == null)
             {
-                DebugErrors.ProjectMissingInfo();
+                Logger.ProjectMissingInfo();
                 return;
             }
             
@@ -194,8 +186,7 @@ namespace Lungfetcher.Editor.Scriptables
 
                 tableSoList.tableSos.Add(tableSo);
             }
-
-            Debug.Log("Added " + tableId);
+            
             EditorUtility.SetDirty(this);
         }
 
@@ -203,10 +194,9 @@ namespace Lungfetcher.Editor.Scriptables
         {
             if (projectInfo == null || tableList == null)
             {
-                DebugErrors.ProjectMissingInfo();
+                Logger.ProjectMissingInfo();
                 return;
             }
-            Debug.Log("Switching");
             RemoveTableSo(tableSo, oldTableId);
             AddTableSo(tableSo, newTableId);
         }
@@ -215,10 +205,9 @@ namespace Lungfetcher.Editor.Scriptables
         {
             if (projectInfo == null || tableList == null)
             {
-                DebugErrors.ProjectMissingInfo();
+                Logger.ProjectMissingInfo();
                 return;
             }
-            Debug.Log("Removing " + tableId);
 
             if (!projectTableSoDic.TryGetValue(tableId, out var tableSoList)) return;
 
@@ -231,24 +220,24 @@ namespace Lungfetcher.Editor.Scriptables
             EditorUtility.SetDirty(this);
         }
 
-        public void RegisterTableFetch(Table table, RequestOperation requestOperation)
+        public void RegisterTableUpdate(TableSo tableSo, UpdateTableOperation updateTableOperation)
         {
-            if(IsFetchingUpdate || _fetchingTablesDic.ContainsKey(table.name)) return;
-            if(tableList.Find(match => match.id == table.id) == null) return;
+            if(IsFetchingUpdate || _updatingTableSos.Contains(tableSo)) return;
             
-            _fetchingTablesDic.Add(table.name, requestOperation);
+            _updatingTableSos.Add(tableSo);
             
-            requestOperation.OnFinished += () =>
+            updateTableOperation.OnFinished += () =>
             {
-                _fetchingTablesDic.Remove(table.name);
-                if(_fetchingTablesDic.Count <= 0) OnAllTableSyncFinished?.Invoke();
+                _updatingTableSos.Remove(tableSo);
+                if(_updatingTableSos.Count <= 0) OnAllTableSyncFinished?.Invoke();
             };
-            OnTableSyncRequested?.Invoke(table.name, requestOperation);
+            OnTableSyncRequested?.Invoke(tableSo, updateTableOperation);
         }
-
-        public void SyncTables()
+        
+        private void UpdateTableSos(TableUpdateType updateType)
         {
             List<long> emptyKeys = new List<long>();
+            
             foreach (var tableId in ProjectTableSoDic.Keys)
             {
                 var tableSoList = ProjectTableSoDic[tableId].tableSos;
@@ -261,7 +250,7 @@ namespace Lungfetcher.Editor.Scriptables
                         tableSoList.RemoveAt(i);
                         continue;
                     }
-                    tableSo.FetchEntries();
+                    UpdateTableSo(tableSo, updateType);
                     i++;
                 }
                 
@@ -273,5 +262,49 @@ namespace Lungfetcher.Editor.Scriptables
                 projectTableSoDic.Remove(id);
             }
         }
+
+        private void UpdateTableSo(TableSo tableSo,TableUpdateType updateType)
+        {
+            switch (updateType)
+            {
+                case TableUpdateType.SoftSyncTable:
+                    tableSo.FetchEntries(false);
+                    break;
+                case TableUpdateType.HardSyncTable:
+                    tableSo.FetchEntries(true);
+                    break;
+                case TableUpdateType.ProjectUpdated:
+                    tableSo.ProjectUpdated();
+                    break;
+                case TableUpdateType.SyncLocales:
+                    tableSo.SetLocales(projectLocales);
+                    break;
+                case TableUpdateType.None:
+                    break;
+            }
+        }
+
+        private void ClearInvalidTableSos()
+        {
+            UpdateTableSos(TableUpdateType.None);
+        }
+        
+        private void UpdateTableSosProjectData()
+        {
+            UpdateTableSos(TableUpdateType.ProjectUpdated);
+        }
+
+        public void SyncTableLocales()
+        {
+            UpdateTableSos(TableUpdateType.SyncLocales);
+        }
+        
+        public void SyncTableSos(bool hardSync = false)
+        {
+            TableUpdateType updateType = hardSync ? TableUpdateType.HardSyncTable : TableUpdateType.SoftSyncTable;
+            UpdateTableSos(updateType);
+        }
+        
+        #endregion
     }
 }

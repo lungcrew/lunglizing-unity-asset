@@ -1,18 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
-using Lungfetcher.Data;
-using Lungfetcher.Editor.Scriptables;
-using Lungfetcher.Web;
-using UnityEngine;
+﻿using System.Threading;
 using UnityEngine.Events;
 
-namespace Lungfetcher.Editor
+namespace Lungfetcher.Editor.Operations
 {
     public class RequestOperation
     {
         public event UnityAction OnFinished;
+        public event UnityAction<float> OnProgressUpdated;
         private bool _isFinished = false;
         private bool _isCanceled = false;
         protected bool isFinishedSuccessfully = false;
@@ -36,7 +30,7 @@ namespace Lungfetcher.Editor
         {
             if (success)
             {
-                progress = 100;
+                UpdateProgress(100f);
             }
 
             _isCanceled = cancellationToken.IsCancellationRequested;
@@ -44,6 +38,12 @@ namespace Lungfetcher.Editor
             _isFinished = true;
             isFinishedSuccessfully = success;
             OnFinished?.Invoke();
+        }
+
+        protected void UpdateProgress(float newProgress)
+        {
+            progress = newProgress;
+            OnProgressUpdated?.Invoke(progress);
         }
         
         protected void GenerateCancellationToken()
