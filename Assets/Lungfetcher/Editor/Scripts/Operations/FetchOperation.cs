@@ -1,8 +1,7 @@
-﻿using System.Threading.Tasks;
-using Lungfetcher.Web;
+﻿using Lungfetcher.Web;
 using UnityEngine.Events;
 
-namespace Lungfetcher.Editor
+namespace Lungfetcher.Editor.Operations
 {
     public class FetchOperation<T> : RequestOperation where T : class
     {
