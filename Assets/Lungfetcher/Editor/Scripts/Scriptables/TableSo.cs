@@ -64,6 +64,14 @@ namespace Lungfetcher.Editor.Scriptables
         #endregion
         
         #region Methods
+        
+        private void Awake()
+        {
+            if (!project) return;
+
+            long tableId = tableInfo?.id ?? 0;
+            project.AddTableSo(this, tableId);
+        }
 
         public void ProjectChanged(ProjectSo newProject, ProjectSo oldProject)
         {
