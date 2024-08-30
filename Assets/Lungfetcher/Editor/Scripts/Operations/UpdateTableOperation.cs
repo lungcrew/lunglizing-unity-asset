@@ -19,7 +19,7 @@ namespace Lungfetcher.Editor.Operations
 		private float _createEntriesProgress = 80f;
 		private FetchOperation<List<EntriesLocale>> _requestFetchTableEntries;
 
-		public UpdateTableOperation(TableSo tableSo, bool hardSync = false, int loopLimit = 1000)
+		public UpdateTableOperation(TableSo tableSo, bool hardSync = false, int loopLimit = 5000)
 		{
 			_loopLimit = loopLimit;
 			_tableSo = tableSo;
@@ -113,18 +113,16 @@ namespace Lungfetcher.Editor.Operations
 	            foreach (var entry in entryLocale.localizations)
 	            {
 		            CreateEntry(entry, stringTable, _hardSync);
-		            
+
 		            loopCount++;
-		            
+
 		            if (loopCount < _loopLimit) continue;
-		            
+
 		            await Task.Yield();
-		            
-		            if(cancellationToken.IsCancellationRequested)
-		            {
+
+		            if (cancellationToken.IsCancellationRequested)
 			            return false;
-		            }
-		            
+
 		            loopCount = 0;
 	            }
 	            

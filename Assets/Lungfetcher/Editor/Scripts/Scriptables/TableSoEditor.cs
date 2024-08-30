@@ -56,6 +56,8 @@ namespace Lungfetcher.Editor.Scriptables
                 _hardSyncTableButton.clicked += () => SyncTable(true);
             
             _projectObject.schedule.Execute(() => _projectObject.RegisterValueChangedCallback(SwitchProject));
+            
+            _tableDropdown.RegisterValueChangedCallback(DropdownChanged);
 
             RefreshTablesDropdown();
             RefreshLocaleFields();
@@ -77,8 +79,7 @@ namespace Lungfetcher.Editor.Scriptables
         private void RefreshTablesDropdown()
         {
             if (_tableDropdown == null || _tableSo == null) return;
-
-            _tableDropdown.UnregisterValueChangedCallback(DropdownChanged);
+            
             if (_tableSo.Project)
             {
                 if (_tableSo.Project.TableList.Count > 0)
@@ -92,40 +93,39 @@ namespace Lungfetcher.Editor.Scriptables
                         var selectedTable = _projectTables.Find(x => x.id == _tableSo.TableInfo.id);
                         if (selectedTable != null)
                         {
-                            _tableDropdown.index = _choices.IndexOf(selectedTable.name);
+                            _tableDropdown.SetValueWithoutNotify(selectedTable.name);
                         }
                         else
                         {
                             _tableSo.ChangeTableInfo(null);
-                            _tableDropdown.index = -1;
+                            _tableDropdown.SetValueWithoutNotify(null);
                         }
                     }
                     else
                     {
-                        _tableDropdown.index = -1;
+                        _tableDropdown.SetValueWithoutNotify(null);
                     }
                 }
                 else
                 {
                     _tableSo.ChangeTableInfo(null);
                     _tableDropdown.choices.Clear();
+                    _tableDropdown.SetValueWithoutNotify(null);
                 }
             }
             else
             {
                 _tableSo.ChangeTableInfo(null);
                 _tableDropdown.choices.Clear();
-                _tableDropdown.index = -1;
+                _tableDropdown.SetValueWithoutNotify(null);
             }
-
-            _tableDropdown.schedule.Execute(() => _tableDropdown.RegisterValueChangedCallback(DropdownChanged));
         }
 
         private void DropdownChanged(ChangeEvent<string> evt)
         {
             if (_tableDropdown == null) return;
 
-            if (_tableDropdown.index == -1) return;
+            if (_tableDropdown.index == -1 || _tableDropdown.value == null) return;
 
             var selectedTable = _projectTables[_tableDropdown.index];
 
@@ -195,6 +195,7 @@ namespace Lungfetcher.Editor.Scriptables
         {
             ProjectSo newProject = evt.newValue as ProjectSo;
             ProjectSo oldProject = evt.previousValue as ProjectSo;
+            
             _tableSo.ProjectChanged(newProject, oldProject);
             RefreshTablesDropdown();
             RefreshLocaleFields();
@@ -302,7 +303,6 @@ namespace Lungfetcher.Editor.Scriptables
         {
             _tableSo.OnFinishTableEntriesUpdate -= TableEntriesUpdated;
             _tableSo.OnProjectDataUpdated -= ProjectDataUpdate;
-            _projectObject.UnregisterValueChangedCallback(SwitchProject);
 
             if (_tableSo.Project == null) return;
 
