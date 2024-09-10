@@ -97,7 +97,7 @@ namespace Lungfetcher.Editor.Operations
 			
             foreach (var entryLocale in entriesLocales)
             {
-	            var localeField = _tableSo.Locales.Find(locale => locale.id == entryLocale.locale_id);
+	            var localeField = _tableSo.Locales.Find(locale => locale.id == entryLocale.locale.id);
 	            if (localeField == null || !localeField.Locale) continue;
             
 	            var localizationTable = _tableSo.StringTableCollection.GetTable(localeField.Locale.Identifier);

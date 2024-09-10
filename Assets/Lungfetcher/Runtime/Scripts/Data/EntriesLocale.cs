@@ -5,9 +5,7 @@ namespace Lungfetcher.Data
     [System.Serializable]
     public class EntriesLocale
     {
-        public long locale_id;
-        public string locale_code;
-        public string locale_name;
+        public ProjectLocale locale;
         public List<LocalizedEntry> localizations;
     }
 }

@@ -58,7 +58,7 @@ namespace Lungfetcher.Editor.Operations
             fetchOperation = new FetchOperation<List<EntriesLocale>>();
             _entriesLocaleFetchDic.Add(tableId, fetchOperation);
             fetchOperation.OnFinished += () => _entriesLocaleFetchDic.Remove(tableId);
-            fetchOperation.Fetch("tables/" + tableId + "/localized-entries", accessKey);
+            fetchOperation.Fetch("tables/" + tableId + "/localized-locales", accessKey);
             
             return fetchOperation;
         }
