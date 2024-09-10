@@ -38,7 +38,7 @@ namespace Lungfetcher.Editor.Operations
 		
 		private async Task<bool> UpdateProjectInfo()
 		{
-			_requestFetchProjectInfo = OperationsController.RequestFetchProjectInfo("info", _projectSo.ApiKey);
+			_requestFetchProjectInfo = OperationsController.RequestFetchProjectInfo("projects/info", _projectSo.ApiKey);
 			while (!_requestFetchProjectInfo.IsFinished)
 			{
 				await Task.Yield();

@@ -16,7 +16,7 @@ namespace Lungfetcher.Editor.Scriptables
     {
         #region Fields
 
-        [SerializeField]private string apiKey = "QcS74OK.M4L77werD9BhsrGGPjixUgKwjVmFrfXQ";
+        [SerializeField]private string apiKey = "zD3-AnM.1nYHOtG3y26JWhgOwoVyjDW55Pq90v4o.5QX";
         [SerializeField]private LongTablesSoDictionary projectTableSoDic;
         [SerializeField]private Project projectInfo;
         [SerializeField]private List<Table> tableList;
@@ -106,13 +106,18 @@ namespace Lungfetcher.Editor.Scriptables
         {
             if(tableList.Count <= 0) return;
             
+            List<long> idsToRemove = new List<long>();
+            
             foreach (long tableId in projectTableSoDic.Keys)
             {
                 var tableFound = tableList.Find(table => tableId == table.id);
                 if (tableFound == null)
-                {
-                    projectTableSoDic.Remove(tableId);
-                }
+                    idsToRemove.Add(tableId);
+            }
+
+            foreach (long id in idsToRemove)
+            {
+                projectTableSoDic.Remove(id);
             }
         }
 
