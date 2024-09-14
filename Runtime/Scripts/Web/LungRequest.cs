@@ -12,7 +12,7 @@ namespace Lungfetcher.Web
     {
         #region Static
 
-        private static readonly string LocalBaseURL = "https://mastiff-simple-redfish.ngrok-free.app/v0";//"http://localhost/v0/external";
+        private static readonly string LocalBaseURL = "https://lunglizing.ngrok.app/v0";
         private static readonly string ProductionBaseURL = "https://api.lunglizing.com/v0/external";
         private static string BaseURL => ResolveURL();
 
