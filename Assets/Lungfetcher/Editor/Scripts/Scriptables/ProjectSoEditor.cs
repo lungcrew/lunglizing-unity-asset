@@ -146,8 +146,8 @@ namespace Lungfetcher.Editor.Scriptables
         private void RefreshNameLabel()
         {
             if(_projectNameLabel == null) return;
-            _projectNameLabel.text = _projectSo.ProjectInfo == null ? "No Project Synced" : 
-                $"Project Title: {_projectSo.ProjectInfo.title}";
+            _projectNameLabel.text = string.IsNullOrEmpty(_projectSo.ProjectInfo?.tag) ? "No Project Synced" : 
+                $"Project Tag: {_projectSo.ProjectInfo.tag}";
         }
 
         private void RefreshUpdateLabel()

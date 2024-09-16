@@ -7,9 +7,8 @@ namespace Lungfetcher.Data
     {
         public long id;
         public long mother_locale_id;
-        public string title;
+        public string tag;
         public string description;
-        public bool test;
         public long entries_count;
         public ProjectLocale mother_locale;
         public List<ProjectLocale> locales;

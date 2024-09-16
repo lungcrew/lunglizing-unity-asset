@@ -8,6 +8,7 @@ using UnityEditor.Localization;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.Localization;
+using Logger = Lungfetcher.Helper.Logger;
 
 namespace Lungfetcher.Editor.Scriptables
 {
@@ -166,7 +167,16 @@ namespace Lungfetcher.Editor.Scriptables
         public void FetchEntries(bool hardSync = false)
         {
             if(!project || tableInfo == null || IsUpdatingEntries) return;
-            if(tableInfo.id == 0) return;
+            if (tableInfo.id == 0)
+            {
+                Logger.LogError($"table info not set for table {this.name}", this);
+                return;
+            }
+            if (!stringTableCollection)
+            {
+                Logger.LogError($"string table collection reference missing for table {this.name}", this);
+                return;
+            }
             
             UpdateTableOperationRef?.CancelOperation();
             UpdateTableOperationRef = new UpdateTableOperation(this, hardSync);
