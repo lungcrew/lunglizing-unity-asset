@@ -239,7 +239,7 @@ namespace Lungfetcher.Editor.Scriptables
             OnTableSyncRequested?.Invoke(tableSo, updateTableOperation);
         }
         
-        private void UpdateTableSos(TableUpdateType updateType)
+        private void UpdateAllTableSo(TableUpdateType updateType)
         {
             List<long> emptyKeys = new List<long>();
             
@@ -255,7 +255,7 @@ namespace Lungfetcher.Editor.Scriptables
                         tableSoList.RemoveAt(i);
                         continue;
                     }
-                    UpdateTableSo(tableSo, updateType);
+                    UpdateSingleTableSo(tableSo, updateType);
                     i++;
                 }
                 
@@ -268,7 +268,7 @@ namespace Lungfetcher.Editor.Scriptables
             }
         }
 
-        private void UpdateTableSo(TableSo tableSo,TableUpdateType updateType)
+        private void UpdateSingleTableSo(TableSo tableSo,TableUpdateType updateType)
         {
             switch (updateType)
             {
@@ -291,23 +291,33 @@ namespace Lungfetcher.Editor.Scriptables
 
         private void ClearInvalidTableSos()
         {
-            UpdateTableSos(TableUpdateType.None);
+            UpdateAllTableSo(TableUpdateType.None);
         }
         
         private void UpdateTableSosProjectData()
         {
-            UpdateTableSos(TableUpdateType.ProjectUpdated);
+            UpdateAllTableSo(TableUpdateType.ProjectUpdated);
         }
 
         public void SyncTableLocales()
         {
-            UpdateTableSos(TableUpdateType.SyncLocales);
+            if (projectTableSoDic.Count <= 0)
+            {
+                Logger.LogWarning("No tables found to sync");
+                return;
+            }
+            UpdateAllTableSo(TableUpdateType.SyncLocales);
         }
         
         public void SyncTableSos(bool hardSync = false)
         {
+            if (projectTableSoDic.Count <= 0)
+            {
+                Logger.LogWarning("No tables found to sync");
+                return;
+            }
             TableUpdateType updateType = hardSync ? TableUpdateType.HardSyncTable : TableUpdateType.SoftSyncTable;
-            UpdateTableSos(updateType);
+            UpdateAllTableSo(updateType);
         }
         
         #endregion
