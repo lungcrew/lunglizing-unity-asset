@@ -11,7 +11,7 @@ using Logger = Lungfetcher.Helper.Logger;
 
 namespace Lungfetcher.Editor.Scriptables
 {
-    [CreateAssetMenu(fileName = "ProjectLungfetcher", menuName = "Lungfetcher/ProjectScriptable", order = 1)]
+    [CreateAssetMenu(fileName = "LungProject", menuName = "Lungfetcher/Lung Project", order = 1)]
     public class ProjectSo : ScriptableObject
     {
         #region Fields
@@ -54,7 +54,6 @@ namespace Lungfetcher.Editor.Scriptables
             SoftSyncTable,
             HardSyncTable,
             ProjectUpdated,
-            SyncLocales
         }
         
         #endregion
@@ -281,9 +280,6 @@ namespace Lungfetcher.Editor.Scriptables
                 case TableUpdateType.ProjectUpdated:
                     tableSo.ProjectUpdated();
                     break;
-                case TableUpdateType.SyncLocales:
-                    tableSo.SetLocales(projectLocales);
-                    break;
                 case TableUpdateType.None:
                     break;
             }
@@ -297,16 +293,6 @@ namespace Lungfetcher.Editor.Scriptables
         private void UpdateTableSosProjectData()
         {
             UpdateAllTableSo(TableUpdateType.ProjectUpdated);
-        }
-
-        public void SyncTableLocales()
-        {
-            if (projectTableSoDic.Count <= 0)
-            {
-                Logger.LogWarning("No tables found to sync");
-                return;
-            }
-            UpdateAllTableSo(TableUpdateType.SyncLocales);
         }
         
         public void SyncTableSos(bool hardSync = false)

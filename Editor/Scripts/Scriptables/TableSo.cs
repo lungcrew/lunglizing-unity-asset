@@ -12,7 +12,7 @@ using Logger = Lungfetcher.Helper.Logger;
 
 namespace Lungfetcher.Editor.Scriptables
 {
-    [CreateAssetMenu(fileName = "TableLungfetcher", menuName = "Lungfetcher/TableScriptable", order = 1)]
+    [CreateAssetMenu(fileName = "LungTable", menuName = "Lungfetcher/Lung Table", order = 1)]
     public class TableSo : ScriptableObject
     {
         #region Fields
@@ -22,7 +22,6 @@ namespace Lungfetcher.Editor.Scriptables
         [SerializeField]private TableStrategy strategy;
         [SerializeField]private StringTableCollection stringTableCollection;
         [SerializeField]private string lastUpdate = "";
-        [SerializeField]private List<LocaleField> locales = new List<LocaleField>();
         
         private LongEntryDictionary _entryDic;
         
@@ -35,7 +34,6 @@ namespace Lungfetcher.Editor.Scriptables
         public TableStrategy Strategy => strategy;
         public StringTableCollection StringTableCollection => stringTableCollection;
         public string LastUpdate => lastUpdate;
-        public List<LocaleField> Locales => locales;
         
         #endregion
         
@@ -91,8 +89,6 @@ namespace Lungfetcher.Editor.Scriptables
                 UpdateTableOperationRef = null;
                 FinishTableUpdate();
             }
-            
-            UpdateLocales();
         }
         
 
@@ -112,45 +108,8 @@ namespace Lungfetcher.Editor.Scriptables
             EditorUtility.SetDirty(this);
         }
 
-        private void UpdateLocales()
-        {
-            if (!project) return;
-            
-            List<LocaleField> updatedLocales = new List<LocaleField>();
-            
-            foreach (var localeInfo in project.ProjectInfo.locales)
-            {
-                if (locales.Count > 0)
-                {
-                    var foundLocaleField = locales.Find(x => x.id == localeInfo.id);
-                    if (foundLocaleField != null)
-                    {
-                        updatedLocales.Add(foundLocaleField);
-                        foundLocaleField.UpdateLocaleSoftData(localeInfo);
-                        continue;
-                    }
-                    updatedLocales.Add(new LocaleField(localeInfo));
-                }
-                else
-                {
-                    updatedLocales.Add(new LocaleField(localeInfo));
-                }
-            }
-            
-            locales = updatedLocales;
-            EditorUtility.SetDirty(this);
-        }
-
-        public void SetLocales(List<LocaleField> localeFields)
-        {
-            locales = localeFields;
-            EditorUtility.SetDirty(this);
-        }
-
         public void ProjectUpdated()
         {
-            UpdateLocales();
-
             if (tableInfo.id == 0) return;
 
             var table = project.TableList.Find(target => target.id == tableInfo.id);

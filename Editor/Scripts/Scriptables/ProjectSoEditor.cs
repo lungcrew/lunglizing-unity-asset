@@ -16,7 +16,6 @@ namespace Lungfetcher.Editor.Scriptables
         private ProjectSo _projectSo;
         private Button _syncProjectButton;
         private Button _syncTablesButton;
-        private Button _syncTableLocales;
         private Label _updateLabel;
         private Label _projectNameLabel;
         private ScrollView _localesView;
@@ -41,7 +40,6 @@ namespace Lungfetcher.Editor.Scriptables
             _localesView = _root.Q<ScrollView>("locales-view");
             _updateLabel = _root.Q<Label>("updated-label");
             _projectNameLabel = _root.Q<Label>("project-name-label");
-            _syncTableLocales = _root.Q<Button>("sync-table-locales-btn");
 
             if (_syncProjectButton != null)
             {
@@ -62,9 +60,6 @@ namespace Lungfetcher.Editor.Scriptables
                     RefreshSyncButtons();
                 };
             }
-            
-            if (_syncTableLocales != null)
-                _syncTableLocales.clicked += () => _projectSo.SyncTableLocales();
 
             ClearProgressBars();
 
@@ -88,15 +83,11 @@ namespace Lungfetcher.Editor.Scriptables
             {
                 _syncTablesButton?.SetEnabled(false);
                 _syncProjectButton?.SetEnabled(false);
-                _syncTableLocales?.SetEnabled(false);
                 return;
             }
 
             _syncProjectButton?.SetEnabled(true);
             _syncTablesButton?.SetEnabled(true);
-            
-            if(_projectSo.ProjectLocales.Count > 0)
-                _syncTableLocales?.SetEnabled(true);
         }
 
         private void ClearProgressBars()
@@ -160,17 +151,11 @@ namespace Lungfetcher.Editor.Scriptables
         private void RefreshLocales()
         {
             if (_localesView == null)
-            {
-                _syncTableLocales?.SetEnabled(false);
                 return;
-            }
 
             _localesView.Clear();
             if (_projectSo.ProjectLocales.Count <= 0)
-            {
-                _syncTableLocales?.SetEnabled(false);
                 return;
-            }
 
             for (int i = 0; i < _projectSo.ProjectLocales.Count; i++)
             {
