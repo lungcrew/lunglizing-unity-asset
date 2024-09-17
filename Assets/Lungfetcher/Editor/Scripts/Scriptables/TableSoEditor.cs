@@ -60,7 +60,6 @@ namespace Lungfetcher.Editor.Scriptables
             _tableDropdown.RegisterValueChangedCallback(DropdownChanged);
 
             RefreshTablesDropdown();
-            RefreshLocaleFields();
             RefreshUpdateLabel();
             RefreshSyncTableEntriesButtons();
             RefreshEntryFetchProgress();
@@ -133,35 +132,6 @@ namespace Lungfetcher.Editor.Scriptables
             RefreshSyncTableEntriesButtons();
         }
 
-        private void RefreshLocaleFields()
-        {
-            if (_localesView == null) return;
-
-            _localesView.Clear();
-
-            for (int i = 0; i < _tableSo.Locales.Count; i++)
-            {
-                var objectField = new ObjectField
-                {
-                    label = _tableSo.Locales[i].code,
-                    objectType = typeof(Locale),
-                    value = _tableSo.Locales[i].Locale
-                };
-                _localesView.Add(objectField);
-
-                var serializedProperty = serializedObject.FindProperty("locales.Array.data[" + i + "].locale");
-
-                if (serializedProperty != null)
-                    objectField.BindProperty(serializedProperty);
-                else
-                {
-                    var index = i;
-                    objectField.RegisterValueChangedCallback(evt => 
-                        _tableSo.Locales[index].SetLocale(evt.newValue as Locale));
-                }
-            }
-        }
-
         private void RefreshUpdateLabel()
         {
             if (_updateLabel == null) return;
@@ -198,7 +168,6 @@ namespace Lungfetcher.Editor.Scriptables
             
             _tableSo.ProjectChanged(newProject, oldProject);
             RefreshTablesDropdown();
-            RefreshLocaleFields();
             RefreshEntryFetchProgress();
             RefreshSyncTableEntriesButtons();
             
@@ -251,7 +220,6 @@ namespace Lungfetcher.Editor.Scriptables
         {
             RefreshSyncTableEntriesButtons();
             RefreshTablesDropdown();
-            RefreshLocaleFields();
         }
 
         private void TableEntriesUpdated(bool success)

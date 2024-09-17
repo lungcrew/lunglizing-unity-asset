@@ -3,8 +3,6 @@
     <ui:DropdownField label="Project Table" name="tables-dropdown" index="-1" />
     <ui:EnumField label="Strategy" binding-path="strategy" type="Lungfetcher.Editor.Scriptables.TableSo+TableStrategy, Lungfecther.Editor" name="strategy-enum" />
     <uie:ObjectField label="Table Collection" type="UnityEditor.Localization.LocalizationTableCollection, Unity.Localization.Editor" name="table-reference-object" binding-path="stringTableCollection" />
-    <ui:Label tabindex="-1" text="Locales" parse-escape-sequences="true" display-tooltip-when-elided="true" name="Label" />
-    <ui:ScrollView name="locales-view" horizontal-scroller-visibility="Hidden" />
     <ui:Button text="Sync" parse-escape-sequences="true" display-tooltip-when-elided="true" name="sync-table-btn" />
     <ui:Button text="Hard Sync" parse-escape-sequences="true" display-tooltip-when-elided="true" name="hard-sync-table-btn" />
     <ui:ScrollView name="progress-view" />

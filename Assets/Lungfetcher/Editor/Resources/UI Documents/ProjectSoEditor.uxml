@@ -7,5 +7,4 @@
     <ui:ScrollView name="progress-view" />
     <ui:Label tabindex="-1" text="Project Locales" parse-escape-sequences="true" display-tooltip-when-elided="true" />
     <ui:ScrollView name="locales-view" horizontal-scroller-visibility="Hidden" />
-    <ui:Button text="Set Locale To Tables" parse-escape-sequences="true" display-tooltip-when-elided="true" name="sync-table-locales-btn" />
 </ui:UXML>
