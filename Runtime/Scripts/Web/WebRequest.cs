@@ -5,9 +5,11 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using NUnit.Framework.Constraints;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.Networking;
+using Logger = Lungfetcher.Helper.Logger;
 
 namespace Lungfetcher.Web
 {
@@ -297,7 +299,14 @@ namespace Lungfetcher.Web
             // Setting Http Headers
             foreach (KeyValuePair<string, string> dictionaryItem in _httpHeaders)
             {
-                request.SetRequestHeader(dictionaryItem.Key, dictionaryItem.Value);
+                try
+                {
+                    request.SetRequestHeader(dictionaryItem.Key, dictionaryItem.Value);
+                }
+                catch (Exception e)
+                {
+                    Logger.LogError(e.Message);
+                }
             }
 
             // Preparing the request body.
