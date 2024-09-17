@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using Lungfetcher.Data;
 using Lungfetcher.Editor.Operations;
 using Lungfetcher.Helper;
@@ -154,7 +155,7 @@ namespace Lungfetcher.Editor.Scriptables
             UpdateTableOperationRef.OnFinished -= FinishTableUpdate;
             if (UpdateTableOperationRef.IsFinishedSuccessfully)
             {
-                lastUpdate = DateTime.Now.ToString();
+                lastUpdate = DateTime.Now.ToString(CultureInfo.CurrentCulture);
                 EditorUtility.SetDirty(this);
             }
             
