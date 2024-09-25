@@ -15,12 +15,12 @@ namespace Lungfetcher.Editor.Scriptables
         public VisualTreeAsset inspectorXML;
         private ProjectSo _projectSo;
         private Button _syncProjectButton;
-        private Button _syncTablesButton;
+        private Button _syncContainersButton;
         private Label _updateLabel;
         private Label _projectNameLabel;
         private ScrollView _localesView;
         private ScrollView _progressView;
-        private Dictionary<TableSo, ProgressBar> _tablesProgressBars = new Dictionary<TableSo, ProgressBar>();
+        private Dictionary<ContainerSo, ProgressBar> _containerProgressBars = new Dictionary<ContainerSo, ProgressBar>();
         private VisualElement _root;
         
         #endregion
@@ -36,7 +36,7 @@ namespace Lungfetcher.Editor.Scriptables
             inspectorXML.CloneTree(_root);
             _syncProjectButton = _root.Q<Button>("sync-project-btn");
             _progressView = _root.Q<ScrollView>("progress-view");
-            _syncTablesButton = _root.Q<Button>("sync-tables-btn");
+            _syncContainersButton = _root.Q<Button>("sync-containers-btn");
             _localesView = _root.Q<ScrollView>("locales-view");
             _updateLabel = _root.Q<Label>("updated-label");
             _projectNameLabel = _root.Q<Label>("project-name-label");
@@ -51,20 +51,20 @@ namespace Lungfetcher.Editor.Scriptables
                 };
             }
 
-            if (_syncTablesButton != null)
+            if (_syncContainersButton != null)
             {
-                _syncTablesButton.clicked += () =>
+                _syncContainersButton.clicked += () =>
                 {
-                    _projectSo.SyncTableSos();
-                    RefreshTablesProgress();
+                    _projectSo.SyncContainerSos();
+                    RefreshContainersProgress();
                     RefreshSyncButtons();
                 };
             }
 
             ClearProgressBars();
 
-            if (_projectSo.IsSyncingTableSos())
-                RefreshTablesProgress();
+            if (_projectSo.IsSyncingContainerSos())
+                RefreshContainersProgress();
             if (_projectSo.IsFetchingUpdate)
                 RefreshUpdateProgress();
 
@@ -79,43 +79,43 @@ namespace Lungfetcher.Editor.Scriptables
         
         private void RefreshSyncButtons()
         {
-            if (_projectSo.IsFetchingUpdate || _projectSo.IsSyncingTableSos())
+            if (_projectSo.IsFetchingUpdate || _projectSo.IsSyncingContainerSos())
             {
-                _syncTablesButton?.SetEnabled(false);
+                _syncContainersButton?.SetEnabled(false);
                 _syncProjectButton?.SetEnabled(false);
                 return;
             }
 
             _syncProjectButton?.SetEnabled(true);
-            _syncTablesButton?.SetEnabled(true);
+            _syncContainersButton?.SetEnabled(true);
         }
 
         private void ClearProgressBars()
         {
             _progressView?.Clear();
-            _tablesProgressBars = new Dictionary<TableSo, ProgressBar>();
+            _containerProgressBars = new Dictionary<ContainerSo, ProgressBar>();
         }
 
-        private void RefreshTablesProgress()
+        private void RefreshContainersProgress()
         {
-            if (_progressView == null || !_projectSo.IsSyncingTableSos())
+            if (_progressView == null || !_projectSo.IsSyncingContainerSos())
                 return;
 
             ClearProgressBars();
 
-            foreach (var table in _projectSo.UpdatingTableSos)
+            foreach (var containerSo in _projectSo.UpdatingContainerSos)
             {
-                UpdateTablesProgress(table, table.UpdateTableOperationRef);
+                UpdateContainersProgress(containerSo, containerSo.UpdateContainerOperationRef);
             }
         }
 
-        private void UpdateTablesProgress(TableSo tableSo, RequestOperation updateTableOperation)
+        private void UpdateContainersProgress(ContainerSo containerSo, RequestOperation updateContainerOperation)
         {
-            if (_tablesProgressBars.ContainsKey(tableSo)) return;
+            if (_containerProgressBars.ContainsKey(containerSo)) return;
 
-            var progressBar = CreateFetchProgressBar(updateTableOperation);
-            _tablesProgressBars.Add(tableSo, progressBar);
-            progressBar.title = "Syncing " + tableSo.name;
+            var progressBar = CreateFetchProgressBar(updateContainerOperation);
+            _containerProgressBars.Add(containerSo, progressBar);
+            progressBar.title = "Syncing " + containerSo.name;
             _progressView.Add(progressBar);
         }
 
@@ -213,15 +213,15 @@ namespace Lungfetcher.Editor.Scriptables
         private void SetListeners()
         {
             _projectSo.OnFinishProjectUpdate += ProjectUpdated;
-            _projectSo.OnAllTableSyncFinished += RefreshSyncButtons;
-            _projectSo.OnTableSyncRequested += UpdateTablesProgress;
+            _projectSo.OnAllContainerSyncFinished += RefreshSyncButtons;
+            _projectSo.OnContainerSyncRequested += UpdateContainersProgress;
         }
         
         private void RemoveListeners()
         {
             _projectSo.OnFinishProjectUpdate -= ProjectUpdated;
-            _projectSo.OnAllTableSyncFinished -= RefreshSyncButtons;
-            _projectSo.OnTableSyncRequested -= UpdateTablesProgress;
+            _projectSo.OnAllContainerSyncFinished -= RefreshSyncButtons;
+            _projectSo.OnContainerSyncRequested -= UpdateContainersProgress;
         }
         
         private void OnEnable()

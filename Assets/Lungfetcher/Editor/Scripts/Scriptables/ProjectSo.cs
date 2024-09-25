@@ -17,14 +17,14 @@ namespace Lungfetcher.Editor.Scriptables
     {
         #region Fields
 
-        [SerializeField]private string apiKey = "zD3-AnM.1nYHOtG3y26JWhgOwoVyjDW55Pq90v4o.5QX";
-        [SerializeField]private LongTablesSoDictionary projectTableSoDic;
+        [SerializeField]private string apiKey;
+        [SerializeField]private LongContainersSoDictionary projectContainerSoDic;
         [SerializeField]private Project projectInfo;
-        [SerializeField]private List<Table> tableList;
+        [SerializeField]private List<Container> containerList;
         [SerializeField]private string lastUpdate = "";
         [SerializeField]private List<LocaleField> projectLocales = new List<LocaleField>();
         
-        private List<TableSo> _updatingTableSos = new List<TableSo>();
+        private List<ContainerSo> _updatingContainerSos = new List<ContainerSo>();
         
         #endregion
 
@@ -32,9 +32,9 @@ namespace Lungfetcher.Editor.Scriptables
 
         public string ApiKey => apiKey;
         public Project ProjectInfo => projectInfo;
-        public List<Table> TableList => tableList;
-        public LongTablesSoDictionary ProjectTableSoDic => projectTableSoDic;
-        public List<TableSo> UpdatingTableSos => _updatingTableSos;
+        public List<Container> ContainerList => containerList;
+        public LongContainersSoDictionary ProjectContainerSoDic => projectContainerSoDic;
+        public List<ContainerSo> UpdatingContainerSos => _updatingContainerSos;
         public string LastUpdate => lastUpdate;
         public List<LocaleField> ProjectLocales => projectLocales;
         
@@ -49,11 +49,11 @@ namespace Lungfetcher.Editor.Scriptables
 
         #region Enums
         
-        private enum TableUpdateType
+        private enum ContainerUpdateType
         {
             None,
-            SoftSyncTable,
-            HardSyncTable,
+            SoftSync,
+            HardSync,
             ProjectUpdated,
         }
         
@@ -63,16 +63,16 @@ namespace Lungfetcher.Editor.Scriptables
         
         public event UnityAction OnBeginProjectUpdate;
         public event UnityAction OnFinishProjectUpdate;
-        public event UnityAction<TableSo, RequestOperation> OnTableSyncRequested;
-        public event UnityAction OnAllTableSyncFinished;
+        public event UnityAction<ContainerSo, RequestOperation> OnContainerSyncRequested;
+        public event UnityAction OnAllContainerSyncFinished;
         
         #endregion
 
         #region Updates
 
-        public bool IsSyncingTableSos()
+        public bool IsSyncingContainerSos()
         {
-            return _updatingTableSos.Count > 0;
+            return _updatingContainerSos.Count > 0;
         }
         
         public void FetchUpdate()
@@ -85,10 +85,10 @@ namespace Lungfetcher.Editor.Scriptables
             UpdateProjectOperationRef.OnFinished += FinishFetch;
         }
 
-        public void SyncTablesInfo(List<Table> tables)
+        public void SyncContainersInfo(List<Container> containers)
         {
-            tableList = tables;
-            RemoveUnusedTablesFromDict();
+            containerList = containers;
+            RemoveUnusedContainersFromDict();
             
             EditorUtility.SetDirty(this);
         }
@@ -102,22 +102,22 @@ namespace Lungfetcher.Editor.Scriptables
             EditorUtility.SetDirty(this);
         }
 
-        private void RemoveUnusedTablesFromDict()
+        private void RemoveUnusedContainersFromDict()
         {
-            if(tableList.Count <= 0) return;
+            if(containerList.Count <= 0) return;
             
             List<long> idsToRemove = new List<long>();
             
-            foreach (long tableId in projectTableSoDic.Keys)
+            foreach (long containerId in projectContainerSoDic.Keys)
             {
-                var tableFound = tableList.Find(table => tableId == table.id);
-                if (tableFound == null)
-                    idsToRemove.Add(tableId);
+                var containerFound = containerList.Find(container => containerId == container.id);
+                if (containerFound == null)
+                    idsToRemove.Add(containerId);
             }
 
             foreach (long id in idsToRemove)
             {
-                projectTableSoDic.Remove(id);
+                projectContainerSoDic.Remove(id);
             }
         }
 
@@ -152,7 +152,7 @@ namespace Lungfetcher.Editor.Scriptables
         {
             if (UpdateProjectOperationRef.IsFinishedSuccessfully || UpdateProjectOperationRef.Progress > 0)
             {
-                UpdateTableSosProjectData();
+                UpdateContainerSosProjectData();
                 lastUpdate = DateTime.Now.ToString(CultureInfo.CurrentCulture);
                 EditorUtility.SetDirty(this);
             }
@@ -164,147 +164,147 @@ namespace Lungfetcher.Editor.Scriptables
         
         #endregion
 
-        #region TableSos Management
+        #region ContainerSos Management
 
-        public void AddTableSo(TableSo tableSo, long tableId)
+        public void AddContainerSo(ContainerSo containerSo, long containerId)
         {
-            if (projectInfo == null || tableList == null)
+            if (projectInfo == null || containerList == null)
             {
                 Logger.ProjectMissingInfo();
                 return;
             }
             
-            if (!projectTableSoDic.TryGetValue(tableId, out var tableSoList))
+            if (!projectContainerSoDic.TryGetValue(containerId, out var containerSoList))
             {
-                tableSoList = new TableSoList
+                containerSoList = new ContainerSoList
                 {
-                    tableSos = new List<TableSo> { tableSo }
+                    containerSos = new List<ContainerSo> { containerSo }
                 };
-                projectTableSoDic.Add(tableId, tableSoList);
+                projectContainerSoDic.Add(containerId, containerSoList);
             }
             else
             {
-                if (tableSoList.tableSos.Contains(tableSo))
+                if (containerSoList.containerSos.Contains(containerSo))
                 {
                     return;
                 }
 
-                tableSoList.tableSos.Add(tableSo);
+                containerSoList.containerSos.Add(containerSo);
             }
             
             EditorUtility.SetDirty(this);
         }
 
-        public void SwitchTableSoId(TableSo tableSo, long oldTableId, long newTableId)
+        public void SwitchContainerSoId(ContainerSo containerSo, long oldContainerId, long newContainerId)
         {
-            if (projectInfo == null || tableList == null)
+            if (projectInfo == null || containerList == null)
             {
                 Logger.ProjectMissingInfo();
                 return;
             }
-            RemoveTableSo(tableSo, oldTableId);
-            AddTableSo(tableSo, newTableId);
+            RemoveContainerSo(containerSo, oldContainerId);
+            AddContainerSo(containerSo, newContainerId);
         }
 
-        public void RemoveTableSo(TableSo tableSo, long tableId)
+        public void RemoveContainerSo(ContainerSo containerSo, long containerId)
         {
-            if (projectInfo == null || tableList == null)
+            if (projectInfo == null || containerList == null)
             {
                 Logger.ProjectMissingInfo();
                 return;
             }
 
-            if (!projectTableSoDic.TryGetValue(tableId, out var tableSoList)) return;
+            if (!projectContainerSoDic.TryGetValue(containerId, out var containerSoList)) return;
 
-            if (!tableSoList.tableSos.Contains(tableSo)) return;
+            if (!containerSoList.containerSos.Contains(containerSo)) return;
             
-            tableSoList.tableSos.Remove(tableSo);
-            if (tableSoList.tableSos.Count <= 0)
-                projectTableSoDic.Remove(tableId);
+            containerSoList.containerSos.Remove(containerSo);
+            if (containerSoList.containerSos.Count <= 0)
+                projectContainerSoDic.Remove(containerId);
 
             EditorUtility.SetDirty(this);
         }
 
-        public void RegisterTableUpdate(TableSo tableSo, UpdateTableOperation updateTableOperation)
+        public void RegisterContainerUpdate(ContainerSo containerSo, UpdateContainerOperation updateContainerOperation)
         {
-            if(IsFetchingUpdate || _updatingTableSos.Contains(tableSo)) return;
+            if(IsFetchingUpdate || _updatingContainerSos.Contains(containerSo)) return;
             
-            _updatingTableSos.Add(tableSo);
+            _updatingContainerSos.Add(containerSo);
             
-            updateTableOperation.OnFinished += () =>
+            updateContainerOperation.OnFinished += () =>
             {
-                _updatingTableSos.Remove(tableSo);
-                if(_updatingTableSos.Count <= 0) OnAllTableSyncFinished?.Invoke();
+                _updatingContainerSos.Remove(containerSo);
+                if(_updatingContainerSos.Count <= 0) OnAllContainerSyncFinished?.Invoke();
             };
-            OnTableSyncRequested?.Invoke(tableSo, updateTableOperation);
+            OnContainerSyncRequested?.Invoke(containerSo, updateContainerOperation);
         }
         
-        private void UpdateAllTableSo(TableUpdateType updateType)
+        private void UpdateAllContainerSo(ContainerUpdateType updateType)
         {
             List<long> emptyKeys = new List<long>();
             
-            foreach (var tableId in ProjectTableSoDic.Keys)
+            foreach (var containerId in ProjectContainerSoDic.Keys)
             {
-                var tableSoList = ProjectTableSoDic[tableId].tableSos;
+                var containerSoList = ProjectContainerSoDic[containerId].containerSos;
                 
-                for (int i = 0; i < tableSoList.Count;)
+                for (int i = 0; i < containerSoList.Count;)
                 {
-                    var tableSo = tableSoList[i];
-                    if (tableSo == null)
+                    var containerSo = containerSoList[i];
+                    if (containerSo == null)
                     {
-                        tableSoList.RemoveAt(i);
+                        containerSoList.RemoveAt(i);
                         continue;
                     }
-                    UpdateSingleTableSo(tableSo, updateType);
+                    UpdateSingleContainerSo(containerSo, updateType);
                     i++;
                 }
                 
-                if(tableSoList.Count <= 0) emptyKeys.Add(tableId);
+                if(containerSoList.Count <= 0) emptyKeys.Add(containerId);
             }
 
             foreach (var id in emptyKeys)
             {
-                projectTableSoDic.Remove(id);
+                projectContainerSoDic.Remove(id);
             }
         }
 
-        private void UpdateSingleTableSo(TableSo tableSo,TableUpdateType updateType)
+        private void UpdateSingleContainerSo(ContainerSo containerSo,ContainerUpdateType updateType)
         {
             switch (updateType)
             {
-                case TableUpdateType.SoftSyncTable:
-                    tableSo.FetchEntries(false);
+                case ContainerUpdateType.SoftSync:
+                    containerSo.FetchEntries(false);
                     break;
-                case TableUpdateType.HardSyncTable:
-                    tableSo.FetchEntries(true);
+                case ContainerUpdateType.HardSync:
+                    containerSo.FetchEntries(true);
                     break;
-                case TableUpdateType.ProjectUpdated:
-                    tableSo.ProjectUpdated();
+                case ContainerUpdateType.ProjectUpdated:
+                    containerSo.ProjectUpdated();
                     break;
-                case TableUpdateType.None:
+                case ContainerUpdateType.None:
                     break;
             }
         }
 
-        private void ClearInvalidTableSos()
+        private void ClearInvalidContainerSos()
         {
-            UpdateAllTableSo(TableUpdateType.None);
+            UpdateAllContainerSo(ContainerUpdateType.None);
         }
         
-        private void UpdateTableSosProjectData()
+        private void UpdateContainerSosProjectData()
         {
-            UpdateAllTableSo(TableUpdateType.ProjectUpdated);
+            UpdateAllContainerSo(ContainerUpdateType.ProjectUpdated);
         }
         
-        public void SyncTableSos(bool hardSync = false)
+        public void SyncContainerSos(bool hardSync = false)
         {
-            if (projectTableSoDic.Count <= 0)
+            if (projectContainerSoDic.Count <= 0)
             {
-                Logger.LogWarning("No tables found to sync");
+                Logger.LogWarning("No containers found to sync");
                 return;
             }
-            TableUpdateType updateType = hardSync ? TableUpdateType.HardSyncTable : TableUpdateType.SoftSyncTable;
-            UpdateAllTableSo(updateType);
+            ContainerUpdateType updateType = hardSync ? ContainerUpdateType.HardSync : ContainerUpdateType.SoftSync;
+            UpdateAllContainerSo(updateType);
         }
         
         #endregion
