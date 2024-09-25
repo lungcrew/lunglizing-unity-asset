@@ -1,6 +1,6 @@
 {
   "name": "com.lungcrew.lungfetcher",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "displayName": "Lungfetcher",
   "description": "A solution for fetching lung projects in Unity",
   "unity": "2022.3",
