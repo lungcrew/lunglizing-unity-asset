@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
         with:
           fetch-depth: 0
       - name: Semantic release
@@ -25,24 +25,16 @@ jobs:
 
       - name: Create upm branch
         run: |
-          git config --global user.name 'github-bot'
-          git config --global user.email 'github-bot@users.noreply.github.com'
-
           git branch -d upm &> /dev/null || echo upm branch not found
           git subtree split -P "$PKG_ROOT" -b upm
           git checkout upm
-
           if [[ -d "Samples" ]]; then
             git mv Samples Samples~
             rm -f Samples.meta
-            find Samples~ -name "*.meta" -type f -delete
+            git config --global user.name 'github-bot'
+            git config --global user.email 'github-bot@users.noreply.github.com'
             git commit -am "fix: Samples => Samples~"
           fi
-
-          git rm -f Runtime/Resources/DevelopmentAnchor.asset
-          git rm -f Runtime/Resources/DevelopmentAnchor.asset.meta
-
-          git commit -am "Removed DevelopmentAnchor"
           git push -f -u origin upm
         env:
           PKG_ROOT: Assets/Lungfetcher
