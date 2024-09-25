@@ -1,0 +1,10 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
+    <ui:Label tabindex="-1" text="No Project Synced" parse-escape-sequences="true" display-tooltip-when-elided="true" name="project-name-label" style="-unity-text-align: upper-center;" />
+    <ui:TextField picking-mode="Ignore" binding-path="apiKey" name="api-key-text" label="API Key" style="justify-content: flex-start; align-self: stretch; flex-wrap: wrap;" />
+    <ui:Button text="Sync Project" parse-escape-sequences="true" display-tooltip-when-elided="true" name="sync-project-btn" style="height: 22px;" />
+    <ui:Label tabindex="-1" text="Project Last Synced at:" parse-escape-sequences="true" display-tooltip-when-elided="true" name="updated-label" />
+    <ui:Button text="Sync Containers" parse-escape-sequences="true" display-tooltip-when-elided="true" name="sync-containers-btn" />
+    <ui:ScrollView name="progress-view" />
+    <ui:Label tabindex="-1" text="Project Locales" parse-escape-sequences="true" display-tooltip-when-elided="true" />
+    <ui:ScrollView name="locales-view" horizontal-scroller-visibility="Hidden" />
+</ui:UXML>

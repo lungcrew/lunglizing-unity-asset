@@ -3,10 +3,13 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
+using NUnit.Framework.Constraints;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.Networking;
+using Logger = Lungfetcher.Helper.Logger;
 
 namespace Lungfetcher.Web
 {
@@ -27,7 +30,7 @@ namespace Lungfetcher.Web
         private object _body;
         private byte[] _bodyRaw;
         private string _contentType;
-
+        
         private UnityWebRequest _unityWebRequest;
 
         private Dictionary<string, string> _httpHeaders;
@@ -256,17 +259,26 @@ namespace Lungfetcher.Web
         /// Performs the request asynchronously.
         /// </summary>
         /// <returns></returns>
-        public virtual async Task<WebResponse> SendAsync()
+        public virtual async Task<WebResponse> SendAsync(CancellationToken token = default)
         {
             _unityWebRequest = GenerateRequest();
             UnityWebRequestAsyncOperation operation = _unityWebRequest.SendWebRequest();
-
-
+            
             while (!operation.isDone)
+            {
+                if (token.IsCancellationRequested)
+                {
+                    _unityWebRequest.Dispose();
+                    Debug.Log("Task WebRequest Cancelled");
+                    
+                    token.ThrowIfCancellationRequested();
+                }
+                
                 await Task.Yield();
-
+            }
+            
             WebResponse response = GenerateResponse(_unityWebRequest);
-
+            
             OnFinalizeAction?.Invoke(response);
 
             _unityWebRequest.Dispose();
@@ -287,7 +299,14 @@ namespace Lungfetcher.Web
             // Setting Http Headers
             foreach (KeyValuePair<string, string> dictionaryItem in _httpHeaders)
             {
-                request.SetRequestHeader(dictionaryItem.Key, dictionaryItem.Value);
+                try
+                {
+                    request.SetRequestHeader(dictionaryItem.Key, dictionaryItem.Value);
+                }
+                catch (Exception e)
+                {
+                    Logger.LogError(e.Message);
+                }
             }
 
             // Preparing the request body.

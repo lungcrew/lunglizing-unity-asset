@@ -1,7 +1,10 @@
+using System;
 using System.Diagnostics;
+using System.Threading;
 using System.Threading.Tasks;
 using Lungfetcher.Development;
 using UnityEngine;
+using Debug = UnityEngine.Debug;
 
 namespace Lungfetcher.Web
 {
@@ -9,7 +12,7 @@ namespace Lungfetcher.Web
     {
         #region Static
 
-        private static readonly string LocalBaseURL = "http://localhost/v0/external";
+        private static readonly string LocalBaseURL = "https://lunglizing.ngrok.app/v0";
         private static readonly string ProductionBaseURL = "https://api.lunglizing.com/v0/external";
         private static string BaseURL => ResolveURL();
 
@@ -31,6 +34,7 @@ namespace Lungfetcher.Web
         #region Fields
 
         private WebRequest _request;
+        public WebRequest Request => _request;
 
         #endregion
 
@@ -55,16 +59,23 @@ namespace Lungfetcher.Web
 
         #region Fetching
 
-        public async Task<LungResponse<T>> Fetch<T>() where T : class
+        public async Task<LungResponse<T>> Fetch<T>(CancellationToken token = default) where T : class
         {
-            WebResponse response = await _request.SendAsync();
+            try
+            {
+                WebResponse response = await _request.SendAsync(token);
+                
+                if (!response.Success)
+                {
+                    return default;
+                }
 
-            if (!response.Success)
+                return response.GetBodyAs<LungResponse<T>>();
+            }
+            catch (OperationCanceledException)
             {
                 return default;
             }
-
-            return response.GetBodyAs<LungResponse<T>>();
         }
 
         #endregion

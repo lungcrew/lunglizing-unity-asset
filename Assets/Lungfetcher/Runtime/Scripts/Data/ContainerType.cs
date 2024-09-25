@@ -1,13 +1,13 @@
 namespace Lungfetcher.Data
 {
     [System.Serializable]
-    public class TableType
+    public class ContainerType
     {
         public int id;
         public string name;
     }
 
-    public enum TableTypeEnum
+    public enum ContainerTypeEnum
     {
         Text = 1,
         Image = 2,
