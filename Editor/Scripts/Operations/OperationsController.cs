@@ -6,7 +6,7 @@ namespace Lungfetcher.Editor.Operations
     public static class OperationsController
     {
         private static Dictionary<long, FetchOperation<List<EntriesLocale>>> _entriesLocaleFetchDic = new Dictionary<long, FetchOperation<List<EntriesLocale>>>();
-        private static Dictionary<string, FetchOperation<List<Table>>> _projectTablesFetchDic = new Dictionary<string, FetchOperation<List<Table>>>();
+        private static Dictionary<string, FetchOperation<List<Container>>> _projectContainersFetchDic = new Dictionary<string, FetchOperation<List<Container>>>();
         private static Dictionary<string, FetchOperation<Project>> _projectInfoFetchDic = new Dictionary<string, FetchOperation<Project>>();
         
         public static FetchOperation<Project> RequestFetchProjectInfo(string endpoint, string accessKey)
@@ -28,27 +28,27 @@ namespace Lungfetcher.Editor.Operations
             return fetchOperation;
         }
         
-        public static FetchOperation<List<Table>> RequestFetchProjectTables(string endpoint, string accessKey)
+        public static FetchOperation<List<Container>> RequestFetchProjectContainers(string endpoint, string accessKey)
         {
-            bool contains = _projectTablesFetchDic.TryGetValue(accessKey, out var fetchOperation);
+            bool contains = _projectContainersFetchDic.TryGetValue(accessKey, out var fetchOperation);
             
             if (contains)
             {
                 return fetchOperation;
             }
 
-            fetchOperation = new FetchOperation<List<Table>>();
+            fetchOperation = new FetchOperation<List<Container>>();
             
-            _projectTablesFetchDic.Add(accessKey, fetchOperation);
-            fetchOperation.OnFinished += () => _projectTablesFetchDic.Remove(accessKey);
+            _projectContainersFetchDic.Add(accessKey, fetchOperation);
+            fetchOperation.OnFinished += () => _projectContainersFetchDic.Remove(accessKey);
             fetchOperation.Fetch(endpoint, accessKey);
 
             return fetchOperation;
         }
 
-        public static FetchOperation<List<EntriesLocale>> RequestFetchTableEntries(long tableId, string accessKey)
+        public static FetchOperation<List<EntriesLocale>> RequestFetchContainersEntries(long containerId, string accessKey)
         {
-            bool contains = _entriesLocaleFetchDic.TryGetValue(tableId, out var fetchOperation);
+            bool contains = _entriesLocaleFetchDic.TryGetValue(containerId, out var fetchOperation);
 
             if (contains)
             {
@@ -56,9 +56,9 @@ namespace Lungfetcher.Editor.Operations
             }
             
             fetchOperation = new FetchOperation<List<EntriesLocale>>();
-            _entriesLocaleFetchDic.Add(tableId, fetchOperation);
-            fetchOperation.OnFinished += () => _entriesLocaleFetchDic.Remove(tableId);
-            fetchOperation.Fetch("tables/" + tableId + "/localized-locales", accessKey);
+            _entriesLocaleFetchDic.Add(containerId, fetchOperation);
+            fetchOperation.OnFinished += () => _entriesLocaleFetchDic.Remove(containerId);
+            fetchOperation.Fetch("containers/" + containerId + "/localized-locales", accessKey);
             
             return fetchOperation;
         }

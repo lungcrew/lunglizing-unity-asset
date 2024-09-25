@@ -1,12 +1,12 @@
 namespace Lungfetcher.Data
 {
     [System.Serializable]
-    public class Table
+    public class Container
     {
         public long id;
         public int type_id;
         public string name;
         public string description;
-        public TableType type;
+        public ContainerType type;
     }
 }

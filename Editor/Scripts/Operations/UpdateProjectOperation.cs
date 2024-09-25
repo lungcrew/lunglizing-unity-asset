@@ -9,9 +9,9 @@ namespace Lungfetcher.Editor.Operations
 	public class UpdateProjectOperation : RequestOperation
 	{
 		private FetchOperation<Project> _requestFetchProjectInfo;
-		private FetchOperation<List<Table>> _requestFetchProjectTables;
+		private FetchOperation<List<Container>> _requestFetchProjectContainers;
 		private float _updateProjectProgress = 40f;
-		private float _updateTablesProgress = 40f;
+		private float _updateContainersProgress = 40f;
 		private ProjectSo _projectSo;
 
 		public UpdateProjectOperation(ProjectSo projectSo)
@@ -24,16 +24,16 @@ namespace Lungfetcher.Editor.Operations
 		private async void UpdateProject()
 		{
 			var updateProjectInfoTask = UpdateProjectInfo();
-			var updateProjectTablesTask = UpdateProjectTables();
+			var updateProjectContainersTask = UpdateProjectContainers();
 			List<Task> tasks = new()
 			{
 				updateProjectInfoTask,
-				updateProjectTablesTask
+				updateProjectContainersTask
 			};
 			await Task.WhenAll(tasks);
 			
 			FinishOperation(_requestFetchProjectInfo.IsFinishedSuccessfully && 
-			                _requestFetchProjectTables.IsFinishedSuccessfully);
+			                _requestFetchProjectContainers.IsFinishedSuccessfully);
 		}
 		
 		private async Task<bool> UpdateProjectInfo()
@@ -63,10 +63,10 @@ namespace Lungfetcher.Editor.Operations
 			return _requestFetchProjectInfo.IsFinishedSuccessfully;
 		}
 		
-		private async Task<bool> UpdateProjectTables()
+		private async Task<bool> UpdateProjectContainers()
 		{
-			_requestFetchProjectTables = OperationsController.RequestFetchProjectTables("tables", _projectSo.ApiKey);
-			while (!_requestFetchProjectTables.IsFinished)
+			_requestFetchProjectContainers = OperationsController.RequestFetchProjectContainers("containers", _projectSo.ApiKey);
+			while (!_requestFetchProjectContainers.IsFinished)
 			{
 				await Task.Yield();
 				
@@ -76,17 +76,17 @@ namespace Lungfetcher.Editor.Operations
 				}
 			}
 			
-			if(_requestFetchProjectTables.IsFinishedSuccessfully)
+			if(_requestFetchProjectContainers.IsFinishedSuccessfully)
 			{
-				_projectSo.SyncTablesInfo(_requestFetchProjectTables.ResponseData);
-				UpdateProgress(progress + _updateTablesProgress);
+				_projectSo.SyncContainersInfo(_requestFetchProjectContainers.ResponseData);
+				UpdateProgress(progress + _updateContainersProgress);
 			}
 			else
 			{
-				Logger.LogError($"Failed to fetch tables for {_projectSo.name}", _projectSo);
+				Logger.LogError($"Failed to fetch containers for {_projectSo.name}", _projectSo);
 			}
 			
-			return _requestFetchProjectTables.IsFinishedSuccessfully;
+			return _requestFetchProjectContainers.IsFinishedSuccessfully;
 		}
 	}
 }
