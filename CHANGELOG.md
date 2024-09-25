@@ -1,3 +1,10 @@
+## [1.4.1](https://github.com/lungcrew/unity-lungfetcher/compare/v1.4.0...v1.4.1) (2024-09-25)
+
+
+### Bug Fixes
+
+* Nunit removed from webrequest ([f838bba](https://github.com/lungcrew/unity-lungfetcher/commit/f838bbab6e3b275cef723ceab724209d6799c17f))
+
 # [1.4.0](https://github.com/lungcrew/unity-lungfetcher/compare/v1.3.0...v1.4.0) (2024-09-25)
 
 
