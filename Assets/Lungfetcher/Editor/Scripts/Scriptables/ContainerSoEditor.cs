@@ -16,7 +16,7 @@ namespace Lungfetcher.Editor.Scriptables
     {
         #region Fields
         
-        public VisualTreeAsset inspectorXML;
+        private VisualTreeAsset _inspectorXML;
         private ContainerSo _containerSo;
         private List<Container> _projectContainers;
         private List<string> _choices = new List<string>();
@@ -38,8 +38,9 @@ namespace Lungfetcher.Editor.Scriptables
             // Create a new VisualElement to be the root of our inspector UI
             _root = new VisualElement();
 
+            _inspectorXML = Resources.Load<VisualTreeAsset>("UI Documents/ContainerSoEditor");
             // Load and clone a visual tree from UXML
-            inspectorXML.CloneTree(_root);
+            _inspectorXML.CloneTree(_root);
 
             _containerDropdown = _root.Q<DropdownField>("containers-dropdown");
             _updateLabel = _root.Q<Label>("updated-label");
