@@ -1,3 +1,10 @@
+## [1.4.2](https://github.com/lungcrew/unity-lungfetcher/compare/v1.4.1...v1.4.2) (2024-09-26)
+
+
+### Bug Fixes
+
+* XML is now loaded from resources. ([f177c2f](https://github.com/lungcrew/unity-lungfetcher/commit/f177c2f0bb39ec796bd867906f8341a47649c0fd))
+
 ## [1.4.1](https://github.com/lungcrew/unity-lungfetcher/compare/v1.4.0...v1.4.1) (2024-09-25)
 
 
