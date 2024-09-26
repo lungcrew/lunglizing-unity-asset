@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using Lungfetcher.Editor.Operations;
 using UnityEditor;
 using UnityEditor.UIElements;
+using UnityEngine;
 using UnityEngine.Localization;
 using UnityEngine.UIElements;
 
@@ -12,7 +13,7 @@ namespace Lungfetcher.Editor.Scriptables
     {
         #region Fields
 
-        public VisualTreeAsset inspectorXML;
+        private VisualTreeAsset _inspectorXML;
         private ProjectSo _projectSo;
         private Button _syncProjectButton;
         private Button _syncContainersButton;
@@ -32,8 +33,9 @@ namespace Lungfetcher.Editor.Scriptables
             // Create a new VisualElement to be the root of our inspector UI
             _root = new VisualElement();
 
+            _inspectorXML = Resources.Load<VisualTreeAsset>("UI Documents/ProjectSoEditor");
             // Load and clone a visual tree from UXML
-            inspectorXML.CloneTree(_root);
+            _inspectorXML.CloneTree(_root);
             _syncProjectButton = _root.Q<Button>("sync-project-btn");
             _progressView = _root.Q<ScrollView>("progress-view");
             _syncContainersButton = _root.Q<Button>("sync-containers-btn");
