@@ -1,0 +1,9 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="True">
+    <ui:VisualElement style="flex-grow: 1; flex-direction: row;">
+        <ui:ScrollView name="left-view" style="flex-grow: 1; max-width: 30%;">
+            <ui:Label tabindex="-1" text=" Projects" parse-escape-sequences="true" display-tooltip-when-elided="true" name="projects-label" />
+            <ui:DropdownField index="-1" choices="System.Collections.Generic.List`1[System.String]" name="projects-dropdown" view-data-key="projects-dropdown-data" />
+        </ui:ScrollView>
+        <ui:ScrollView style="flex-grow: 1;" />
+    </ui:VisualElement>
+</ui:UXML>
