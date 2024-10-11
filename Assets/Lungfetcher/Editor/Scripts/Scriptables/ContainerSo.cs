@@ -7,24 +7,19 @@ using Lungfetcher.Helper;
 using UnityEditor;
 using UnityEditor.Localization;
 using UnityEngine;
-using UnityEngine.Events;
-using UnityEngine.Localization;
 using Logger = Lungfetcher.Helper.Logger;
 
 namespace Lungfetcher.Editor.Scriptables
 {
-    [CreateAssetMenu(fileName = "LungContainer", menuName = "Lungfetcher/Lung Container", order = 1)]
     public class ContainerSo : ScriptableObject
     {
         #region Fields
         
-        [SerializeField]private ProjectSo project;
-        [SerializeField]private Container containerInfo;
-        [SerializeField]private ContainerStrategy strategy;
-        [SerializeField]private StringTableCollection stringTableCollection;
-        [SerializeField]private string lastUpdate = "";
-        
-        private LongEntryDictionary _entryDic;
+        [SerializeField, HideInInspector]private ProjectSo project;
+        [SerializeField, HideInInspector]private Container containerInfo;
+        [SerializeField, HideInInspector]private ContainerStrategy strategy = ContainerStrategy.ReadableKey;
+        [SerializeField, HideInInspector]private StringTableCollection stringTableCollection;
+        [SerializeField, HideInInspector]private string lastUpdate = "";
         
         #endregion
         
@@ -47,9 +42,9 @@ namespace Lungfetcher.Editor.Scriptables
         
         #region Events
         
-        public event UnityAction OnBeginContainerEntriesUpdate;
-        public event UnityAction<bool> OnFinishContainerEntriesUpdate;
-        public event UnityAction OnProjectDataUpdated;
+        public event Action OnBeginContainerEntriesUpdate;
+        public event Action<bool> OnFinishContainerEntriesUpdate;
+        public event Action OnContainerInfoUpdated; 
         
         #endregion
 
@@ -64,60 +59,18 @@ namespace Lungfetcher.Editor.Scriptables
         #endregion
         
         #region Methods
-        
-        private void Awake()
+
+        public void Init(Container container, ProjectSo projectSo)
         {
-            if (!project) return;
-
-            long containerID = containerInfo?.id ?? 0;
-            project.AddContainerSo(this, containerID);
-        }
-
-        public void ProjectChanged(ProjectSo newProject, ProjectSo oldProject)
-        {
-            if (oldProject != null && oldProject != newProject) 
-                ChangeContainerInfo(null, oldProject);
-            
-            long containerID = containerInfo?.id ?? 0;
-            if(oldProject != null) oldProject.RemoveContainerSo(this, containerID);
-            if(newProject != null) newProject.AddContainerSo(this, containerID);
-            
-            lastUpdate = "";
-
-            if (IsUpdatingEntries)
-            {
-                UpdateContainerOperationRef?.CancelOperation();
-                UpdateContainerOperationRef = null;
-                FinishContainerUpdate();
-            }
-        }
-        
-
-        public void ChangeContainerInfo(Container container, ProjectSo projectSo = null)
-        {
-            if (projectSo == null) projectSo = project;
-            Container oldContainerInfo = containerInfo;
             containerInfo = container;
-            long newContainerId = container?.id ?? 0;
-            long oldContainerId = oldContainerInfo?.id ?? 0;
-            if(!projectSo) return;
-            
-            projectSo.SwitchContainerSoId(this, oldContainerId ,newContainerId);
-
-            lastUpdate = "";
-            
+            project = projectSo;
             EditorUtility.SetDirty(this);
         }
-
-        public void ProjectUpdated()
+        
+        public void UpdateContainerInfo(Container container)
         {
-            if (containerInfo.id == 0) return;
-
-            var container = project.ContainerList.Find(target => target.id == containerInfo.id);
             containerInfo = container;
-            
-            OnProjectDataUpdated?.Invoke();
-            EditorUtility.SetDirty(this);
+            OnContainerInfoUpdated?.Invoke();
         }
         
         #endregion
@@ -167,11 +120,5 @@ namespace Lungfetcher.Editor.Scriptables
         }
         
         #endregion
-    }
-
-    [Serializable]
-    public class ContainerSoList
-    {
-        public List<ContainerSo> containerSos = new List<ContainerSo>();
     }
 }

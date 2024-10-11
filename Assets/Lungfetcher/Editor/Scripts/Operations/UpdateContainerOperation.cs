@@ -17,6 +17,7 @@ namespace Lungfetcher.Editor.Operations
 		private int _entryMissingKeyCount = 0;
 		private float _downloadFinishProgress = 20f;
 		private float _createEntriesProgress = 80f;
+		private List<string> _readableKeysCreated = new List<string>();
 		private FetchOperation<List<EntriesLocale>> _requestFetchStringTableEntries;
 
 		public UpdateContainerOperation(ContainerSo containerSo, bool hardSync = false, int loopLimit = 5000)
@@ -69,8 +70,8 @@ namespace Lungfetcher.Editor.Operations
 
 		private async Task<bool> FetchStringTableEntries()
 		{
-			_requestFetchStringTableEntries = OperationsController.RequestFetchContainersEntries(_containerSo.ContainerInfo.id, 
-				_containerSo.Project.ApiKey);
+			_requestFetchStringTableEntries = OperationsController.RequestFetchContainersEntries
+			(_containerSo.ContainerInfo.id, _containerSo.Project.ApiKey);
 			
 			while (!_requestFetchStringTableEntries.IsFinished)
 			{
@@ -89,6 +90,9 @@ namespace Lungfetcher.Editor.Operations
 		{
 			int loopCount = 0;
 			List<StringTable> updatedStringTables = new List<StringTable>();
+			
+			if(_containerSo.Strategy == ContainerSo.ContainerStrategy.ReadableKey)
+				_readableKeysCreated = new List<string>();
 
 			if (_hardSync)
 			{
@@ -97,7 +101,8 @@ namespace Lungfetcher.Editor.Operations
 			
             foreach (var entryLocale in entriesLocales)
             {
-	            var localeField = _containerSo.Project.ProjectLocales.Find(locale => locale.id == entryLocale.locale.id);
+	            var localeField = _containerSo.Project.ProjectLocales.Find(locale => 
+		            locale.id == entryLocale.locale.id);
 	            if (localeField == null || !localeField.Locale) continue;
             
 	            var localizationTable = _containerSo.StringTableCollection.GetTable(localeField.Locale.Identifier);
@@ -154,7 +159,8 @@ namespace Lungfetcher.Editor.Operations
 					if (_containerSo.StringTableCollection.SharedData.GetEntry(entry.entry_readable_key) != null && 
 					    _containerSo.StringTableCollection.SharedData.GetEntry(entry.entry_uuid) == null)
 					{
-						_containerSo.StringTableCollection.SharedData.RenameKey(entry.entry_readable_key,key);
+						_containerSo.StringTableCollection.SharedData.RenameKey(entry.entry_readable_key
+							, key);
 					}
 			}
 			else
@@ -168,12 +174,20 @@ namespace Lungfetcher.Editor.Operations
 				{
 					key = entry.entry_readable_key;
 					
+					//check for duplicate keys
+					if(_readableKeysCreated.Contains(key))
+						Logger.LogWarning($"Duplicate readable key {key} in {_containerSo.name}", 
+							_containerSo);
+					else
+						_readableKeysCreated.Add(key);
+					
 					if(!syncAll)
 						//rename entry key if saved previously with uuid
 						if (_containerSo.StringTableCollection.SharedData.GetEntry(entry.entry_readable_key) == null && 
 						    _containerSo.StringTableCollection.SharedData.GetEntry(entry.entry_uuid) != null)
 						{
-							_containerSo.StringTableCollection.SharedData.RenameKey(entry.entry_uuid, key);
+							_containerSo.StringTableCollection.SharedData.RenameKey(entry.entry_uuid, 
+								key);
 						}
 				}
 			}

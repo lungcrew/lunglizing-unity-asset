@@ -43,7 +43,7 @@ namespace Lungfetcher.Editor.Operations
 			{
 				await Task.Yield();
 
-				if (cancellationToken.IsCancellationRequested)
+				if (cancellationToken.IsCancellationRequested || !_projectSo)
 				{
 					return false;
 				}
@@ -54,9 +54,13 @@ namespace Lungfetcher.Editor.Operations
 				_projectSo.SyncProjectInfo(_requestFetchProjectInfo.ResponseData);
 				UpdateProgress(progress + _updateProjectProgress);
 			}
-			else
+			else if (_projectSo)
 			{
 				Logger.LogError($"Failed to fetch project info for {_projectSo.name}", _projectSo);
+			}
+			else
+			{
+				Logger.LogError($"Project Scriptable Is Missing");
 			}
 				
 			
@@ -70,7 +74,7 @@ namespace Lungfetcher.Editor.Operations
 			{
 				await Task.Yield();
 				
-				if (cancellationToken.IsCancellationRequested)
+				if (cancellationToken.IsCancellationRequested || !_projectSo)
 				{
 					return false;	
 				}
@@ -81,9 +85,13 @@ namespace Lungfetcher.Editor.Operations
 				_projectSo.SyncContainersInfo(_requestFetchProjectContainers.ResponseData);
 				UpdateProgress(progress + _updateContainersProgress);
 			}
-			else
+			else if (_projectSo)
 			{
 				Logger.LogError($"Failed to fetch containers for {_projectSo.name}", _projectSo);
+			}
+			else
+			{
+				Logger.LogError($"Project Scriptable Is Missing");
 			}
 			
 			return _requestFetchProjectContainers.IsFinishedSuccessfully;

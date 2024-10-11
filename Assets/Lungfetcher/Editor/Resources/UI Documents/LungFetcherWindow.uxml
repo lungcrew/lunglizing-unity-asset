@@ -1,9 +1,18 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="True">
-    <ui:VisualElement style="flex-grow: 1; flex-direction: row;">
-        <ui:ScrollView name="left-view" style="flex-grow: 1; max-width: 30%;">
+    <Lungfetcher.Editor.UI.CustomControls.SliptView fixed-pane-initial-dimension="200">
+        <ui:ScrollView name="left-view" style="flex-grow: 1; min-width: 15%;">
+            <ui:Button text="Refresh Window" parse-escape-sequences="true" display-tooltip-when-elided="true" name="reload-projects-btn" />
+            <ui:Button text="Add New Project" parse-escape-sequences="true" display-tooltip-when-elided="true" name="add-project-btn" />
             <ui:Label tabindex="-1" text=" Projects" parse-escape-sequences="true" display-tooltip-when-elided="true" name="projects-label" />
             <ui:DropdownField index="-1" choices="System.Collections.Generic.List`1[System.String]" name="projects-dropdown" view-data-key="projects-dropdown-data" />
+            <ui:VisualElement name="project-root-element" style="flex-grow: 1;" />
         </ui:ScrollView>
-        <ui:ScrollView style="flex-grow: 1;" />
-    </ui:VisualElement>
+        <ui:ScrollView name="right-view" style="flex-basis: auto; min-width: 15%;">
+            <uie:Toolbar name="Toolbar" style="flex-direction: row; justify-content: center;">
+                <ui:Button text="Sync Containers" parse-escape-sequences="true" display-tooltip-when-elided="true" name="sync-containers-btn" />
+                <ui:Button text="Hard Sync Containers" parse-escape-sequences="true" display-tooltip-when-elided="true" name="hardsync-containers-btn" />
+            </uie:Toolbar>
+            <ui:VisualElement name="container-root-element" />
+        </ui:ScrollView>
+    </Lungfetcher.Editor.UI.CustomControls.SliptView>
 </ui:UXML>

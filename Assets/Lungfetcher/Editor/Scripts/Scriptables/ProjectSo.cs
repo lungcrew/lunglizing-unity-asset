@@ -12,17 +12,16 @@ using Logger = Lungfetcher.Helper.Logger;
 
 namespace Lungfetcher.Editor.Scriptables
 {
-    [CreateAssetMenu(fileName = "LungProject", menuName = "Lungfetcher/Lung Project", order = 1)]
     public class ProjectSo : ScriptableObject
     {
         #region Fields
 
-        [SerializeField]private string apiKey;
-        [SerializeField]private LongContainersSoDictionary projectContainerSoDic;
-        [SerializeField]private Project projectInfo;
-        [SerializeField]private List<Container> containerList;
-        [SerializeField]private string lastUpdate = "";
-        [SerializeField]private List<LocaleField> projectLocales = new List<LocaleField>();
+        [SerializeField, HideInInspector]private string apiKey;
+        [SerializeField, HideInInspector]private LongContainerSoDictionary containerSoDic;
+        [SerializeField, HideInInspector]private Project projectInfo;
+        [SerializeField, HideInInspector]private List<Container> containerList;
+        [SerializeField, HideInInspector]private string lastUpdate = "";
+        [SerializeField, HideInInspector]private List<LocaleField> projectLocales = new List<LocaleField>();
         
         private List<ContainerSo> _updatingContainerSos = new List<ContainerSo>();
         
@@ -33,7 +32,7 @@ namespace Lungfetcher.Editor.Scriptables
         public string ApiKey => apiKey;
         public Project ProjectInfo => projectInfo;
         public List<Container> ContainerList => containerList;
-        public LongContainersSoDictionary ProjectContainerSoDic => projectContainerSoDic;
+        public LongContainerSoDictionary ContainerSoDic => containerSoDic;
         public List<ContainerSo> UpdatingContainerSos => _updatingContainerSos;
         public string LastUpdate => lastUpdate;
         public List<LocaleField> ProjectLocales => projectLocales;
@@ -54,7 +53,7 @@ namespace Lungfetcher.Editor.Scriptables
             None,
             SoftSync,
             HardSync,
-            ProjectUpdated,
+            DataUpdated,
         }
         
         #endregion
@@ -79,6 +78,11 @@ namespace Lungfetcher.Editor.Scriptables
         {
             if(IsFetchingUpdate) return;
 
+            if (string.IsNullOrEmpty(apiKey))
+            {
+                Logger.LogError("Project API Key Is Missing", this);
+                return;
+            }
             IsFetchingUpdate = true; 
             OnBeginProjectUpdate?.Invoke();
             UpdateProjectOperationRef = new UpdateProjectOperation(this);
@@ -88,7 +92,7 @@ namespace Lungfetcher.Editor.Scriptables
         public void SyncContainersInfo(List<Container> containers)
         {
             containerList = containers;
-            RemoveUnusedContainersFromDict();
+            RemoveUnusedContainers();
             
             EditorUtility.SetDirty(this);
         }
@@ -100,25 +104,6 @@ namespace Lungfetcher.Editor.Scriptables
             if(projectInfo != null) UpdateLocales();
             
             EditorUtility.SetDirty(this);
-        }
-
-        private void RemoveUnusedContainersFromDict()
-        {
-            if(containerList.Count <= 0) return;
-            
-            List<long> idsToRemove = new List<long>();
-            
-            foreach (long containerId in projectContainerSoDic.Keys)
-            {
-                var containerFound = containerList.Find(container => containerId == container.id);
-                if (containerFound == null)
-                    idsToRemove.Add(containerId);
-            }
-
-            foreach (long id in idsToRemove)
-            {
-                projectContainerSoDic.Remove(id);
-            }
         }
 
         private void UpdateLocales()
@@ -152,61 +137,53 @@ namespace Lungfetcher.Editor.Scriptables
         {
             if (UpdateProjectOperationRef.IsFinishedSuccessfully || UpdateProjectOperationRef.Progress > 0)
             {
-                UpdateContainerSosProjectData();
+                UpdateContainerSosData();
                 lastUpdate = DateTime.Now.ToString(CultureInfo.CurrentCulture);
                 EditorUtility.SetDirty(this);
             }
 
             UpdateProjectOperationRef = null;
             IsFetchingUpdate = false;
+            AssetDatabase.SaveAssetIfDirty(this);
             OnFinishProjectUpdate?.Invoke();
         }
         
         #endregion
 
         #region ContainerSos Management
+        
+        private ContainerSo CreateContainerSo(Container containerInfo)
+        {
+            var containerSo = CreateInstance<ContainerSo>();
+            containerSo.name = containerInfo.name;
+            AssetDatabase.AddObjectToAsset(containerSo, this);
+            containerSo.Init(containerInfo, this);
+            return containerSo;
+        }
 
-        public void AddContainerSo(ContainerSo containerSo, long containerId)
+        public void AddContainer(Container containerInfo)
         {
             if (projectInfo == null || containerList == null)
             {
                 Logger.ProjectMissingInfo();
                 return;
             }
-            
-            if (!projectContainerSoDic.TryGetValue(containerId, out var containerSoList))
-            {
-                containerSoList = new ContainerSoList
-                {
-                    containerSos = new List<ContainerSo> { containerSo }
-                };
-                projectContainerSoDic.Add(containerId, containerSoList);
-            }
-            else
-            {
-                if (containerSoList.containerSos.Contains(containerSo))
-                {
-                    return;
-                }
 
-                containerSoList.containerSos.Add(containerSo);
+            if (!containerSoDic.TryGetValue(containerInfo.id, out var containerSo))
+            {
+                containerSo = CreateContainerSo(containerInfo);
+                containerSoDic.Add(containerInfo.id, containerSo);
+                EditorUtility.SetDirty(this);
             }
+
+            if (containerSo) return;
             
+            containerSo = CreateContainerSo(containerInfo);
+            containerSoDic[containerInfo.id] = containerSo;
             EditorUtility.SetDirty(this);
         }
 
-        public void SwitchContainerSoId(ContainerSo containerSo, long oldContainerId, long newContainerId)
-        {
-            if (projectInfo == null || containerList == null)
-            {
-                Logger.ProjectMissingInfo();
-                return;
-            }
-            RemoveContainerSo(containerSo, oldContainerId);
-            AddContainerSo(containerSo, newContainerId);
-        }
-
-        public void RemoveContainerSo(ContainerSo containerSo, long containerId)
+        private void RemoveContainerSo(long containerId)
         {
             if (projectInfo == null || containerList == null)
             {
@@ -214,15 +191,35 @@ namespace Lungfetcher.Editor.Scriptables
                 return;
             }
 
-            if (!projectContainerSoDic.TryGetValue(containerId, out var containerSoList)) return;
+            if (!containerSoDic.TryGetValue(containerId, out var container)) return;
 
-            if (!containerSoList.containerSos.Contains(containerSo)) return;
+            if (container != null)
+            {
+                AssetDatabase.RemoveObjectFromAsset(container);    
+            }
             
-            containerSoList.containerSos.Remove(containerSo);
-            if (containerSoList.containerSos.Count <= 0)
-                projectContainerSoDic.Remove(containerId);
+            containerSoDic.Remove(containerId);
 
             EditorUtility.SetDirty(this);
+        }
+        
+        private void RemoveUnusedContainers()
+        {
+            if(containerList.Count <= 0) return;
+            
+            List<long> idsToRemove = new List<long>();
+            
+            foreach (long containerId in containerSoDic.Keys)
+            {
+                var containerFound = containerList.Find(container => containerId == container.id);
+                if (containerFound == null)
+                    idsToRemove.Add(containerId);
+            }
+
+            foreach (long id in idsToRemove)
+            {
+                RemoveContainerSo(id);
+            }
         }
 
         public void RegisterContainerUpdate(ContainerSo containerSo, UpdateContainerOperation updateContainerOperation)
@@ -239,36 +236,29 @@ namespace Lungfetcher.Editor.Scriptables
             OnContainerSyncRequested?.Invoke(containerSo, updateContainerOperation);
         }
         
-        private void UpdateAllContainerSo(ContainerUpdateType updateType)
+        private void UpdateAllContainers(ContainerUpdateType updateType)
         {
-            List<long> emptyKeys = new List<long>();
-            
-            foreach (var containerId in ProjectContainerSoDic.Keys)
+            foreach (var container in containerList)
             {
-                var containerSoList = ProjectContainerSoDic[containerId].containerSos;
-                
-                for (int i = 0; i < containerSoList.Count;)
+                if (containerSoDic.TryGetValue(container.id, out var containerSo))
                 {
-                    var containerSo = containerSoList[i];
-                    if (containerSo == null)
+                    if (!containerSo)
                     {
-                        containerSoList.RemoveAt(i);
-                        continue;
+                        containerSo = CreateContainerSo(container);
+                        containerSoDic[container.id] = containerSo;
                     }
-                    UpdateSingleContainerSo(containerSo, updateType);
-                    i++;
+                }
+                else
+                {
+                    containerSo = CreateContainerSo(container);
+                    containerSoDic.Add(container.id, containerSo);
                 }
                 
-                if(containerSoList.Count <= 0) emptyKeys.Add(containerId);
-            }
-
-            foreach (var id in emptyKeys)
-            {
-                projectContainerSoDic.Remove(id);
+                UpdateContainerSo(containerSo, container, updateType);
             }
         }
 
-        private void UpdateSingleContainerSo(ContainerSo containerSo,ContainerUpdateType updateType)
+        private void UpdateContainerSo(ContainerSo containerSo, Container containerInfo, ContainerUpdateType updateType)
         {
             switch (updateType)
             {
@@ -278,33 +268,28 @@ namespace Lungfetcher.Editor.Scriptables
                 case ContainerUpdateType.HardSync:
                     containerSo.FetchEntries(true);
                     break;
-                case ContainerUpdateType.ProjectUpdated:
-                    containerSo.ProjectUpdated();
+                case ContainerUpdateType.DataUpdated:
+                    containerSo.UpdateContainerInfo(containerInfo);
                     break;
                 case ContainerUpdateType.None:
                     break;
             }
         }
-
-        private void ClearInvalidContainerSos()
+        
+        private void UpdateContainerSosData()
         {
-            UpdateAllContainerSo(ContainerUpdateType.None);
+            UpdateAllContainers(ContainerUpdateType.DataUpdated);
         }
         
-        private void UpdateContainerSosProjectData()
+        public void SyncContainerEntries(bool hardSync = false)
         {
-            UpdateAllContainerSo(ContainerUpdateType.ProjectUpdated);
-        }
-        
-        public void SyncContainerSos(bool hardSync = false)
-        {
-            if (projectContainerSoDic.Count <= 0)
+            if (containerSoDic.Count <= 0)
             {
                 Logger.LogWarning("No containers found to sync");
                 return;
             }
             ContainerUpdateType updateType = hardSync ? ContainerUpdateType.HardSync : ContainerUpdateType.SoftSync;
-            UpdateAllContainerSo(updateType);
+            UpdateAllContainers(updateType);
         }
         
         #endregion

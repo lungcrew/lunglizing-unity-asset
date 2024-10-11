@@ -5,7 +5,7 @@ using Lungfetcher.Helper;
 namespace Lungfetcher.Editor.Helper
 {
     [Serializable]
-    public class LongContainersSoDictionary : UnitySerializedDictionary<long, ContainerSoList>
+    public class LongContainerSoDictionary : UnitySerializedDictionary<long, ContainerSo>
     {
     }
 }
