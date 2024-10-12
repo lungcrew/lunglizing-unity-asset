@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.Linq;
 using Lungfetcher.Editor.Scriptables;
 using Lungfetcher.Editor.Scriptables.Settings;
 using Lungfetcher.Editor.UI.Elements;
@@ -12,10 +11,9 @@ namespace Lungfetcher.Editor.UI.Window
 {
     public class LungFetcherWindow : EditorWindow
     {
-        private const string TreeAssetPath = "UI Documents/LungFetcherWindow";
+        #region UXML References
+
         private VisualTreeAsset _visualTreeAsset;
-        //private List<ProjectSo> _projectSoList = new List<ProjectSo>();
-        //private List<string> _projectNames = new List<string>();
         private ProjectSo _currentProject;
         private DropdownField _projectsDropdown;
         private ProjectElement _projectElement;
@@ -25,15 +23,25 @@ namespace Lungfetcher.Editor.UI.Window
         private Button _reloadProjectsButton;
         private Button _syncContainersButton;
         private Button _hardSyncContainersButton;
+
+        #endregion
+
+        #region Variables/Properties
+
+        private const string TreeAssetPath = "UI Documents/LungFetcherWindow";
         private Dictionary<long, ContainerElement> _containerElements = new Dictionary<long, ContainerElement>();
         private Dictionary<string, ProjectSo> _projectSoDic = new Dictionary<string, ProjectSo>();
         private LungSettings Settings => LungSettings.instance;
 
-        [MenuItem("Tools/LungFetcher/LungFetcherWindow")]
+        #endregion
+
+        #region Setup
+
+        [MenuItem("Tools/LungFetcher/LungFetcher Window")]
         public static void OpenWindow()
         {
             LungFetcherWindow wnd = GetWindow<LungFetcherWindow>();
-            wnd.titleContent = new GUIContent("LungFetcherWindow");
+            wnd.titleContent = new GUIContent("LungFetcher");
         }
 
         public void CreateGUI()
@@ -77,11 +85,9 @@ namespace Lungfetcher.Editor.UI.Window
             SetupProjects();
         }
 
-        private void ToggleSyncButtons(bool enable)
-        {
-            _hardSyncContainersButton.SetEnabled(enable);
-            _syncContainersButton.SetEnabled(enable);
-        }
+        #endregion
+
+        #region Project
 
         private void SaveNewProject()
         {
@@ -133,40 +139,7 @@ namespace Lungfetcher.Editor.UI.Window
                     projectSoAsset);
             }
         }
-
-        private void FillContainers()
-        {
-            if (!_currentProject) return;
-
-            foreach (var containerId in _currentProject.ContainerSoDic.Keys)
-            {
-                if (_containerElements.ContainsKey(containerId)) continue;
-                var containerElement = new ContainerElement(_currentProject.ContainerSoDic[containerId]);
-                _containerElements.Add(containerId, containerElement);
-                _containerRoot.Add(containerElement);
-                containerElement.OnElementAutoRemoved += ContainerRemoved;
-            }
-        }
-
-        private void ClearContainers()
-        {
-            foreach (var containerElement in _containerElements.Values)
-            {
-                containerElement.Cleanup();
-                _containerRoot.Remove(containerElement);
-                containerElement.OnElementAutoRemoved -= ContainerRemoved;
-            }
-
-            _containerElements.Clear();
-        }
-
-        private void ContainerRemoved(long containerId)
-        {
-            if (!_containerElements.TryGetValue(containerId, out var containerElement)) return;
-
-            _containerElements.Remove(containerId);
-        }
-
+        
         private void FillProjectsDropdown()
         {
             if (_projectsDropdown == null) return;
@@ -181,7 +154,7 @@ namespace Lungfetcher.Editor.UI.Window
 
             _projectsDropdown.index = -1;
         }
-
+        
         private void ProjectDropdownValueChanged(ChangeEvent<string> evt)
         {
             ClearContainers();
@@ -237,10 +210,61 @@ namespace Lungfetcher.Editor.UI.Window
             _currentProject = null;
             _projectsDropdown.index = -1;
         }
+
+        #endregion
+
+        #region Containers
+
+        private void FillContainers()
+        {
+            if (!_currentProject) return;
+
+            foreach (var containerId in _currentProject.ContainerSoDic.Keys)
+            {
+                if (_containerElements.ContainsKey(containerId)) continue;
+                var containerElement = new ContainerElement(_currentProject.ContainerSoDic[containerId]);
+                _containerElements.Add(containerId, containerElement);
+                _containerRoot.Add(containerElement);
+                containerElement.OnElementAutoRemoved += ContainerRemoved;
+            }
+        }
+
+        private void ClearContainers()
+        {
+            foreach (var containerElement in _containerElements.Values)
+            {
+                containerElement.Cleanup();
+                _containerRoot.Remove(containerElement);
+                containerElement.OnElementAutoRemoved -= ContainerRemoved;
+            }
+
+            _containerElements.Clear();
+        }
+
+        private void ContainerRemoved(long containerId)
+        {
+            if (!_containerElements.TryGetValue(containerId, out var containerElement)) return;
+
+            _containerElements.Remove(containerId);
+        }
+
+        #endregion
+        
+        #region Syncing
+        
+        private void ToggleSyncButtons(bool enable)
+        {
+            _hardSyncContainersButton.SetEnabled(enable);
+            _syncContainersButton.SetEnabled(enable);
+        }
         
         private void SyncContainers() => _projectElement?.SyncContainers(hardSync: false);
 
         private void HardSyncContainers() => _projectElement?.SyncContainers(hardSync: true);
+        
+        #endregion
+
+        #region Listeners
         
         private void SetButtonsListeners()
         {
@@ -279,5 +303,7 @@ namespace Lungfetcher.Editor.UI.Window
         {
             Cleanup();
         }
+        
+        #endregion
     }
 }

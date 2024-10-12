@@ -5,10 +5,16 @@ namespace Lungfetcher.Editor.Operations
 {
     public static class OperationsController
     {
+        #region Dictionaries
+
         private static Dictionary<long, FetchOperation<List<EntriesLocale>>> _entriesLocaleFetchDic = new Dictionary<long, FetchOperation<List<EntriesLocale>>>();
         private static Dictionary<string, FetchOperation<List<Container>>> _projectContainersFetchDic = new Dictionary<string, FetchOperation<List<Container>>>();
         private static Dictionary<string, FetchOperation<Project>> _projectInfoFetchDic = new Dictionary<string, FetchOperation<Project>>();
-        
+
+        #endregion
+
+        #region Fetch Requests
+
         public static FetchOperation<Project> RequestFetchProjectInfo(string endpoint, string accessKey)
         {
             bool contains = _projectInfoFetchDic.TryGetValue(accessKey, out var fetchOperation);
@@ -62,5 +68,7 @@ namespace Lungfetcher.Editor.Operations
             
             return fetchOperation;
         }
+
+        #endregion
     }
 }

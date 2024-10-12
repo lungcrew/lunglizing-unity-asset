@@ -1,10 +1,10 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
-    <ui:VisualElement style="flex-grow: 0; background-color: rgb(0, 0, 0); margin-bottom: 5px;">
+    <ui:VisualElement style="flex-grow: 0; background-color: rgb(0, 0, 0); margin-bottom: 5px; margin-top: 5px;">
         <ui:Foldout text="Container" name="container-foldout" view-data-key="coltainer-foldout-data" value="false" style="-unity-font-style: bold;">
-            <ui:EnumField label="Strategy" type="Lungfetcher.Editor.Scriptables.ContainerSo+ContainerStrategy, Lungfecther.Editor" name="strategy-enum" />
-            <uie:ObjectField label="Table Collection" name="table-reference-object" type="UnityEditor.Localization.StringTableCollection, Unity.Localization.Editor" />
-            <ui:Button text="Sync" parse-escape-sequences="true" display-tooltip-when-elided="true" name="sync-container-btn" />
-            <ui:Button text="Hard Sync" parse-escape-sequences="true" display-tooltip-when-elided="true" name="hard-sync-container-btn" />
+            <ui:EnumField label="Strategy" type="Lungfetcher.Editor.Scriptables.ContainerSo+ContainerStrategy, Lungfecther.Editor" name="strategy-enum" tooltip="Select how the entries keys are saved" />
+            <uie:ObjectField label="Table Collection" name="table-reference-object" type="UnityEditor.Localization.StringTableCollection, Unity.Localization.Editor" tooltip="Table collection to save entries" />
+            <ui:Button text="Sync" parse-escape-sequences="true" display-tooltip-when-elided="true" name="sync-container-btn" tooltip="Sync Entries. Does not deletes unsynced entries from the table " />
+            <ui:Button text="Hard Sync" parse-escape-sequences="true" display-tooltip-when-elided="true" name="hard-sync-container-btn" tooltip="Sync entries and deletes every unsynced entry, table or location." />
             <ui:ScrollView name="progress-view" />
             <ui:Label tabindex="-1" text="Last Synced at:" parse-escape-sequences="true" display-tooltip-when-elided="true" name="updated-label" />
         </ui:Foldout>

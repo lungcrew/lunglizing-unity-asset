@@ -8,11 +8,17 @@ namespace Lungfetcher.Editor.Operations
 {
 	public class UpdateProjectOperation : RequestOperation
 	{
+		#region Variables
+
 		private FetchOperation<Project> _requestFetchProjectInfo;
 		private FetchOperation<List<Container>> _requestFetchProjectContainers;
 		private float _updateProjectProgress = 40f;
 		private float _updateContainersProgress = 40f;
 		private ProjectSo _projectSo;
+
+		#endregion
+
+		#region Constructor
 
 		public UpdateProjectOperation(ProjectSo projectSo)
 		{
@@ -20,7 +26,11 @@ namespace Lungfetcher.Editor.Operations
 			GenerateCancellationToken();
 			UpdateProject();
 		}
-		
+
+		#endregion
+
+		#region Tasks/Async
+
 		private async void UpdateProject()
 		{
 			var updateProjectInfoTask = UpdateProjectInfo();
@@ -96,5 +106,7 @@ namespace Lungfetcher.Editor.Operations
 			
 			return _requestFetchProjectContainers.IsFinishedSuccessfully;
 		}
+
+		#endregion
 	}
 }

@@ -12,8 +12,8 @@ namespace Lungfetcher.Editor.UI.Elements
 {
     public class ProjectElement : VisualElement
     {
-        private const string XMLPath = "UI Documents/ProjectElement";
-        private ProjectSo _projectSo;
+        #region UXML References
+
         private Button SyncProjectButton => this.Q<Button>("sync-project-btn");
         private Label UpdateLabel => this.Q<Label>("updated-label");
         private Label ProjectNameLabel => this.Q<Label>("project-name-label");
@@ -22,14 +22,28 @@ namespace Lungfetcher.Editor.UI.Elements
         private TextField APIKey => this.Q<TextField>("api-key-text");
         private ObjectField ProjectObject => this.Q<ObjectField>("project-field");
 
+        #endregion
+
+        #region Variables/Properties
+
+        private const string XMLPath = "UI Documents/ProjectElement";
+        private ProjectSo _projectSo;
         private Dictionary<ContainerSo, ProgressBar>
             _containerProgressBars = new Dictionary<ContainerSo, ProgressBar>();
 
         public bool SyncButtonEnabled { get; private set; }
 
+        #endregion
+
+        #region Events
+
         public event Action OnProjectUpdated;
         public event Action OnProjectNull;
         public event Action<bool> OnToggleSyncContainersButton;
+
+        #endregion
+
+        #region Setup
 
         public ProjectElement(ProjectSo projectSo)
         {
@@ -69,6 +83,10 @@ namespace Lungfetcher.Editor.UI.Elements
             SetupElement(projectSo);
         }
 
+        #endregion
+
+        #region Button Updates
+
         private void SyncProject()
         {
             if (IsProjectNull())
@@ -88,6 +106,25 @@ namespace Lungfetcher.Editor.UI.Elements
             RefreshContainersProgress();
             RefreshSyncButtons();
         }
+        
+        private void RefreshSyncButtons()
+        {
+            if (_projectSo.IsFetchingUpdate || _projectSo.IsSyncingContainerSos())
+            {
+                OnToggleSyncContainersButton?.Invoke(false);
+                SyncButtonEnabled = false;
+                SyncProjectButton?.SetEnabled(false);
+                return;
+            }
+            
+            OnToggleSyncContainersButton?.Invoke(true);
+            SyncButtonEnabled = true;
+            SyncProjectButton?.SetEnabled(true);
+        }
+
+        #endregion
+
+        #region Element Updates
 
         private void RefreshNameLabel()
         {
@@ -181,22 +218,7 @@ namespace Lungfetcher.Editor.UI.Elements
 
             return progressBar;
         }
-
-        private void RefreshSyncButtons()
-        {
-            if (_projectSo.IsFetchingUpdate || _projectSo.IsSyncingContainerSos())
-            {
-                OnToggleSyncContainersButton?.Invoke(false);
-                SyncButtonEnabled = false;
-                SyncProjectButton?.SetEnabled(false);
-                return;
-            }
-            
-            OnToggleSyncContainersButton?.Invoke(true);
-            SyncButtonEnabled = true;
-            SyncProjectButton?.SetEnabled(true);
-        }
-
+        
         private void RefreshUpdateProgress()
         {
             if (ProgressView == null || !_projectSo.IsFetchingUpdate)
@@ -229,6 +251,10 @@ namespace Lungfetcher.Editor.UI.Elements
             return true;
         }
 
+        #endregion
+
+        #region Listeners
+
         public void Cleanup() => RemoveListeners();
 
 
@@ -251,5 +277,7 @@ namespace Lungfetcher.Editor.UI.Elements
             _projectSo.OnAllContainerSyncFinished -= RefreshSyncButtons;
             _projectSo.OnContainerSyncRequested -= UpdateContainersProgress;
         }
+
+        #endregion
     }
 }

@@ -1,24 +1,41 @@
-﻿using System.Threading;
-using UnityEngine.Events;
+﻿using System;
+using System.Threading;
 
 namespace Lungfetcher.Editor.Operations
 {
     public class RequestOperation
     {
-        public event UnityAction OnFinished;
-        public event UnityAction<float> OnProgressUpdated;
+
+        #region Variables
+
         private bool _isFinished = false;
         private bool _isCanceled = false;
         protected bool isFinishedSuccessfully = false;
         protected float progress = 0;
         protected CancellationToken cancellationToken;
         private CancellationTokenSource _cancellationTokenSource;
-        
+
+        #endregion
+
+        #region Properties
+
         public bool IsCanceled => _isCanceled;
         public bool IsFinished => _isFinished;
         public float Progress => progress;
         public bool IsFinishedSuccessfully => isFinishedSuccessfully;
-        
+
+        #endregion
+
+        #region Events
+
+        public event Action OnFinished;
+        public event Action<float> OnProgressUpdated;
+
+        #endregion
+
+
+        #region Operation Methods
+
         public void CancelOperation()
         {
             _cancellationTokenSource?.Cancel();
@@ -53,5 +70,7 @@ namespace Lungfetcher.Editor.Operations
             _cancellationTokenSource = new CancellationTokenSource();
             cancellationToken = _cancellationTokenSource.Token;
         }
+
+        #endregion
     }
 }

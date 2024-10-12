@@ -1,14 +1,14 @@
-﻿using Lungfetcher.Web;
-using UnityEngine.Events;
+﻿using System;
+using Lungfetcher.Web;
 
 namespace Lungfetcher.Editor.Operations
 {
     public class FetchOperation<T> : RequestOperation where T : class
-    {
-        public event UnityAction<T> OnResponse;
-        
+    { 
         public T ResponseData { get; private set; }
         public string AccessKey { get; private set; }
+        
+        public event Action<T> OnResponse;
 
         public async void Fetch(string endpoint, string accessKey)
         {

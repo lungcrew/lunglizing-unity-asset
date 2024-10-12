@@ -3,7 +3,6 @@ using System.Threading.Tasks;
 using Lungfetcher.Data;
 using Lungfetcher.Editor.Scriptables;
 using UnityEditor;
-using UnityEngine;
 using UnityEngine.Localization.Tables;
 using Logger = Lungfetcher.Helper.Logger;
 
@@ -11,6 +10,8 @@ namespace Lungfetcher.Editor.Operations
 {
 	public class UpdateContainerOperation : RequestOperation
 	{
+		#region Variables
+
 		private ContainerSo _containerSo;
 		private bool _hardSync = false;
 		private int _loopLimit;
@@ -20,6 +21,10 @@ namespace Lungfetcher.Editor.Operations
 		private List<string> _readableKeysCreated = new List<string>();
 		private FetchOperation<List<EntriesLocale>> _requestFetchStringTableEntries;
 
+		#endregion
+
+		#region Constructor
+
 		public UpdateContainerOperation(ContainerSo containerSo, bool hardSync = false, int loopLimit = 5000)
 		{
 			_loopLimit = loopLimit;
@@ -27,7 +32,11 @@ namespace Lungfetcher.Editor.Operations
 			_hardSync = hardSync;
 			UpdateStringTableEntries();
 		}
-		
+
+		#endregion
+
+		#region Async/Tasks
+
 		private async void UpdateStringTableEntries()
 		{
 			GenerateCancellationToken();
@@ -71,7 +80,7 @@ namespace Lungfetcher.Editor.Operations
 		private async Task<bool> FetchStringTableEntries()
 		{
 			_requestFetchStringTableEntries = OperationsController.RequestFetchContainersEntries
-			(_containerSo.ContainerInfo.id, _containerSo.Project.ApiKey);
+				(_containerSo.ContainerInfo.id, _containerSo.Project.ApiKey);
 			
 			while (!_requestFetchStringTableEntries.IsFinished)
 			{
@@ -99,53 +108,57 @@ namespace Lungfetcher.Editor.Operations
 				_containerSo.StringTableCollection.ClearAllEntries();
 			}
 			
-            foreach (var entryLocale in entriesLocales)
-            {
-	            var localeField = _containerSo.Project.ProjectLocales.Find(locale => 
-		            locale.id == entryLocale.locale.id);
-	            if (localeField == null || !localeField.Locale) continue;
+			foreach (var entryLocale in entriesLocales)
+			{
+				var localeField = _containerSo.Project.ProjectLocales.Find(locale => 
+					locale.id == entryLocale.locale.id);
+				if (localeField == null || !localeField.Locale) continue;
             
-	            var localizationTable = _containerSo.StringTableCollection.GetTable(localeField.Locale.Identifier);
-	            if (!localizationTable)
-	            {
-		            localizationTable = _containerSo.StringTableCollection.AddNewTable(localeField.Locale.Identifier);
-	            }
+				var localizationTable = _containerSo.StringTableCollection.GetTable(localeField.Locale.Identifier);
+				if (!localizationTable)
+				{
+					localizationTable = _containerSo.StringTableCollection.AddNewTable(localeField.Locale.Identifier);
+				}
                             
-	            var stringTable = localizationTable as StringTable;
-	            if(!stringTable) return false;
+				var stringTable = localizationTable as StringTable;
+				if(!stringTable) return false;
 	            
-	            updatedStringTables.Add(stringTable);
-	            foreach (var entry in entryLocale.localizations)
-	            {
-		            CreateEntry(entry, stringTable, _hardSync);
+				updatedStringTables.Add(stringTable);
+				foreach (var entry in entryLocale.localizations)
+				{
+					CreateEntry(entry, stringTable, _hardSync);
 
-		            loopCount++;
+					loopCount++;
 
-		            if (loopCount < _loopLimit) continue;
+					if (loopCount < _loopLimit) continue;
 
-		            await Task.Yield();
+					await Task.Yield();
 
-		            if (cancellationToken.IsCancellationRequested)
-			            return false;
+					if (cancellationToken.IsCancellationRequested)
+						return false;
 
-		            loopCount = 0;
-	            }
+					loopCount = 0;
+				}
 	            
-            }
-            if(progress < _createEntriesProgress)
+			}
+			if(progress < _createEntriesProgress)
 				UpdateProgress(_createEntriesProgress);
             
-            await Task.Yield();
+			await Task.Yield();
             
-            if(_hardSync)
-	            RemoveUnusedStringTables(updatedStringTables);
+			if(_hardSync)
+				RemoveUnusedStringTables(updatedStringTables);
 
-            if (_entryMissingKeyCount > 0)
-	            Logger.LogWarning($"Readable Key missing in {_entryMissingKeyCount} Entries Of " +
-	                              $"{_containerSo.name}! Used UUID Instead");
+			if (_entryMissingKeyCount > 0)
+				Logger.LogWarning($"Readable Key missing in {_entryMissingKeyCount} Entries Of " +
+				                  $"{_containerSo.name}! Used UUID Instead");
 
-            return true;
+			return true;
 		}
+
+		#endregion
+
+		#region Entries/Tables Management
 
 		private void CreateEntry(LocalizedEntry entry, StringTable stringTable, bool syncAll = false)
 		{
@@ -218,5 +231,7 @@ namespace Lungfetcher.Editor.Operations
 				Logger.LogWarning($"Failed to delete unused string tables at: {string.Join(", ", failedPath)}");
 			}
 		}
+
+		#endregion
 	}
 }

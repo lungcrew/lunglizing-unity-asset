@@ -6,9 +6,7 @@ using Lungfetcher.Editor.Helper;
 using Lungfetcher.Editor.Operations;
 using UnityEditor;
 using UnityEngine;
-using UnityEngine.Events;
 using Logger = Lungfetcher.Helper.Logger;
-
 
 namespace Lungfetcher.Editor.Scriptables
 {
@@ -60,10 +58,10 @@ namespace Lungfetcher.Editor.Scriptables
 
         #region Events
         
-        public event UnityAction OnBeginProjectUpdate;
-        public event UnityAction OnFinishProjectUpdate;
-        public event UnityAction<ContainerSo, RequestOperation> OnContainerSyncRequested;
-        public event UnityAction OnAllContainerSyncFinished;
+        public event Action OnBeginProjectUpdate;
+        public event Action OnFinishProjectUpdate;
+        public event Action<ContainerSo, RequestOperation> OnContainerSyncRequested;
+        public event Action OnAllContainerSyncFinished;
         
         #endregion
 

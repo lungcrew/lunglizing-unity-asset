@@ -12,11 +12,18 @@ namespace Lungfetcher.Editor.UI.Elements
 {
 	public class ContainerElement : VisualElement
 	{
+		#region Variables
+
 		private const string XMLPath = "UI Documents/ContainerElement";
 		private ContainerSo _containerSo;
 		private ProjectSo _projectSo;
 		private long _containerId;
 		private bool _showWindow;
+
+		#endregion
+
+		#region UXML References
+
 		private ObjectField TableCollection => this.Q<ObjectField>("table-reference-object");
 		private Foldout ContainerFoldout => this.Q<Foldout>("container-foldout");
 		private Label UpdateLabel => this.Q<Label>("updated-label");
@@ -25,7 +32,15 @@ namespace Lungfetcher.Editor.UI.Elements
 		private Button SyncContainerButton => this.Q<Button>("sync-container-btn");
 		private Button HardSyncContainerButton => this.Q<Button>("hard-sync-container-btn");
 
+		#endregion
+
+		#region Events
+
 		public event Action<long> OnElementAutoRemoved;
+
+		#endregion
+
+		#region Constructor/Setup
 
 		public ContainerElement(ContainerSo containerSo)
 		{
@@ -54,7 +69,11 @@ namespace Lungfetcher.Editor.UI.Elements
 			
 			SetListeners();
 		}
-		
+
+		#endregion
+
+		#region Buttons
+
 		private void HardSyncContainer()
 		{
 			if(IsContainerNull()) return;
@@ -74,37 +93,7 @@ namespace Lungfetcher.Editor.UI.Elements
 			RefreshEntryFetchProgress();
 			RefreshSyncContainerEntriesButtons();
 		}
-
-		private void RefreshEntryFetchProgress()
-		{
-			ProgressView.Clear();
-
-			if (_containerSo.UpdateContainerOperationRef == null) return;
-			
-			ProgressBar progressBar = CreateUpdateContainerProgressBar(_containerSo.UpdateContainerOperationRef);
-			progressBar.title = "Syncing Entries";
-			ProgressView.Add(progressBar);
-		}
-
-		private void RefreshFoldoutLabel() => ContainerFoldout.text = _containerSo.ContainerInfo.name;
-
-		private ProgressBar CreateUpdateContainerProgressBar(UpdateContainerOperation updateContainerOperation)
-		{
-			ProgressBar progressBar = new ProgressBar
-			{
-				value = updateContainerOperation.Progress
-			};
-			progressBar.schedule.Execute(() =>
-			{
-				progressBar.value = updateContainerOperation.Progress;
-				if (updateContainerOperation.IsFinished)
-					progressBar.title = progressBar.title + " " +
-					                    (updateContainerOperation.IsFinishedSuccessfully ? "Done" : "Failed");
-			}).Until(() => updateContainerOperation.IsFinished);
-
-			return progressBar;
-		}
-
+		
 		private void RefreshSyncContainerEntriesButtons()
 		{
 			if(IsContainerNull()) return;
@@ -125,6 +114,40 @@ namespace Lungfetcher.Editor.UI.Elements
 
 			HardSyncContainerButton?.SetEnabled(true);
 			SyncContainerButton?.SetEnabled(true);
+		}
+		
+		#endregion
+
+		#region Element Updates
+
+		private void RefreshFoldoutLabel() => ContainerFoldout.text = _containerSo.ContainerInfo.name;
+		
+		private void RefreshEntryFetchProgress()
+		{
+			ProgressView.Clear();
+
+			if (_containerSo.UpdateContainerOperationRef == null) return;
+			
+			ProgressBar progressBar = CreateUpdateContainerProgressBar(_containerSo.UpdateContainerOperationRef);
+			progressBar.title = "Syncing Entries";
+			ProgressView.Add(progressBar);
+		}
+
+		private ProgressBar CreateUpdateContainerProgressBar(UpdateContainerOperation updateContainerOperation)
+		{
+			ProgressBar progressBar = new ProgressBar
+			{
+				value = updateContainerOperation.Progress
+			};
+			progressBar.schedule.Execute(() =>
+			{
+				progressBar.value = updateContainerOperation.Progress;
+				if (updateContainerOperation.IsFinished)
+					progressBar.title = progressBar.title + " " +
+					                    (updateContainerOperation.IsFinishedSuccessfully ? "Done" : "Failed");
+			}).Until(() => updateContainerOperation.IsFinished);
+
+			return progressBar;
 		}
 
 		private void RefreshUpdateLabel()
@@ -189,7 +212,11 @@ namespace Lungfetcher.Editor.UI.Elements
 			OnElementAutoRemoved?.Invoke(_containerId);
 			return true;
 		}
-		
+
+		#endregion
+
+		#region Listeners
+
 		public void Cleanup() => RemoveListeners();
 		
 		private void SetListeners()
@@ -221,5 +248,7 @@ namespace Lungfetcher.Editor.UI.Elements
 			_projectSo.OnFinishProjectUpdate -= ProjectUpdated;
 			_projectSo.OnBeginProjectUpdate -= RefreshSyncContainerEntriesButtons;
 		}
+
+		#endregion
 	}
 }

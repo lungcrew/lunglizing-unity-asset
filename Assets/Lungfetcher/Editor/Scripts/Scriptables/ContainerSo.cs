@@ -58,7 +58,7 @@ namespace Lungfetcher.Editor.Scriptables
         
         #endregion
         
-        #region Methods
+        #region Setups
 
         public void Init(Container container, ProjectSo projectSo)
         {
